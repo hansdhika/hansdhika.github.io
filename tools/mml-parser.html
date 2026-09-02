@@ -1,1 +1,110 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Hans Dhika portfolio"><title>MML Parser | Hans Dhika</title><link rel="stylesheet" href="../style.css"></head><body><header><div class="container nav"><a class="logo" href="../">HD.</a><button class="menu" id="menu">☰</button><nav id="nav"><a class="" href="../">Home</a><a class="active" href="./">Tools</a><a class="" href="../projects/">Projects</a><a class="" href="../about/">About</a><a class="" href="../contact/">Contact</a></nav></div></header><main class="container section"><div class="section-title"><p class="label">TOOLS / MML PARSER</p><h1>MML Parser</h1><p class="muted">Upload a Huawei MML text file and extract command blocks into a readable table. The file is processed locally in your browser.</p></div><div class="tool-box"><div class="tool-tabs"><a class="active" href="./mml-parser.html">MML Parser</a><a href="./">All Tools</a></div><div class="tool-panel"><label class="upload"><span id="file-name">Choose MML TXT or LOG file</span><input type="file" id="mml-file" accept=".txt,.log"></label><div class="tool-actions"><button class="button primary" id="parse-btn">Parse MML</button><button class="button" id="reset-btn">Reset</button></div><div id="mml-status" class="status"></div><div class="result-wrap"><table id="result-table"><thead><tr><th>No</th><th>NE_NAME</th><th>COMMAND</th><th>OBJECT</th><th>RAW</th></tr></thead><tbody><tr><td colspan="5" class="empty">Upload a TXT file to see the result.</td></tr></tbody></table></div><button class="button download" id="csv-btn" disabled>Download CSV</button></div></div></main><footer>© <span id="year"></span> Hans Dhika · <em>Per Aspera Ad Astra.</em></footer><script src="../script.js"></script><script src="./mml-parser.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Hans Dhika portfolio">
+<title>MML Parser | Hans Dhika</title>
+<link rel="stylesheet" href="../style.css">
+
+<!-- SheetJS: create real .xlsx files directly in the browser -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+<header>
+    <div class="container nav">
+        <a class="logo" href="../">HD.</a>
+
+        <button class="menu" id="menu">☰</button>
+
+        <nav id="nav">
+            <a class="" href="../">Home</a>
+            <a class="active" href="./">Tools</a>
+            <a class="" href="../projects/">Projects</a>
+            <a class="" href="../about/">About</a>
+            <a class="" href="../contact/">Contact</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container section">
+
+    <div class="section-title">
+        <p class="label">TOOLS / MML PARSER</p>
+        <h1>MML Parser</h1>
+
+        <p class="muted">
+            Upload a Huawei MML text file and extract command blocks into
+            a readable table. The file is processed locally in your browser.
+        </p>
+    </div>
+
+    <div class="tool-box">
+
+        <div class="tool-tabs">
+            <a class="active" href="./mml-parser.html">MML Parser</a>
+            <a href="./">All Tools</a>
+        </div>
+
+        <div class="tool-panel">
+
+            <label class="upload">
+                <span id="file-name">Choose MML TXT or LOG file</span>
+                <input type="file" id="mml-file" accept=".txt,.log">
+            </label>
+
+            <div class="tool-actions">
+                <button class="button primary" id="parse-btn">
+                    Parse MML
+                </button>
+
+                <button class="button" id="reset-btn">
+                    Reset
+                </button>
+            </div>
+
+            <div id="mml-status" class="status"></div>
+
+            <div class="result-wrap">
+                <table id="result-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>NE_NAME</th>
+                            <th>COMMAND</th>
+                            <th>OBJECT</th>
+                            <th>RAW / MESSAGE</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="empty">
+                                Upload a TXT file to see the result.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="button download" id="xlsx-btn" disabled>
+                Download XLSX
+            </button>
+
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    © <span id="year"></span> Hans Dhika ·
+    <em>Per Aspera Ad Astra.</em>
+</footer>
+
+<script src="../script.js"></script>
+<script src="./mml-parser.js"></script>
+
+</body>
+</html>
