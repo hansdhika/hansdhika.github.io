@@ -1,2369 +1,940 @@
-/* =========================================================
-   MML PARSER WEB
-   Python-compatible parser
-   - Local browser parsing
-   - FAILED / NO_MATCH / LOG_SUCCESS
-   - Dynamic command tables
-   - Key = Value parsing
-   - Table parsing
-   - Sub-parameter parsing
-   - Pagination
-   - XLSX export
-   ========================================================= */
+from pathlib import Path
 
-
-/* =========================================================
-   BASIC COPY DETERRENCE
-   ========================================================= */
-
-document.addEventListener("contextmenu", function (e) {
-    e.preventDefault();
-});
-
-document.addEventListener("dragstart", function (e) {
-    if (!["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) {
-        e.preventDefault();
-    }
-});
-
-document.addEventListener("keydown", function (e) {
-
-    if (e.key === "F12") {
-        e.preventDefault();
-        return;
-    }
-
-    if (e.ctrlKey || e.metaKey) {
-
-        const key = e.key.toLowerCase();
-
-        if (["c", "x", "s", "u", "p"].includes(key)) {
-            e.preventDefault();
-            return;
-        }
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-
-        const key = e.key.toLowerCase();
-
-        if (["i", "j", "c"].includes(key)) {
-            e.preventDefault();
-        }
-    }
-});
-
-
-/* =========================================================
-   STYLE
-   ========================================================= */
-
-const protectionStyle = document.createElement("style");
-
-protectionStyle.textContent = `
-
-    body {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    input,
-    textarea,
-    select {
-        user-select: text;
-        -webkit-user-select: text;
-    }
-
-    img {
-        -webkit-user-drag: none;
-    }
-
-    #mml-pagination {
-        margin-top: 18px;
-        margin-bottom: 14px;
-    }
-
-    .mml-pagination-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 12px;
-        font-size: 14px;
-    }
-
-    .mml-rows-control {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    #mml-rows-select {
-        padding: 6px 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        background: white;
-    }
-
-    .mml-pagination-bottom {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-
-    #mml-page-buttons {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .mml-page-btn {
-        min-width: 36px;
-        height: 36px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        background: white;
-        cursor: pointer;
-    }
-
-    .mml-page-btn.active {
-        font-weight: bold;
-    }
-
-    .mml-page-dots {
-        padding: 8px 4px;
-    }
-
-    button:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-    }
-
-    @media (max-width: 600px) {
-
-        .mml-pagination-top {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-    }
-
-`;
-
-document.head.appendChild(protectionStyle);
-
-
-/* =========================================================
-   MAIN
+js = r'''/* =========================================================
+   MML PARSER WEB - FINAL
+   - Python-compatible parsing
+   - Tab per result sheet
+   - Pagination per tab
+   - XLSX multi-sheet export
+   - SheetJS lazy-load
+   - Anti-copy deterrence
    ========================================================= */
 
 (function () {
-
     "use strict";
 
+    /* ---------- Anti-copy deterrence ---------- */
+    document.addEventListener("contextmenu", e => e.preventDefault());
 
-    /* =====================================================
-       ELEMENTS
-       ===================================================== */
+    document.addEventListener("dragstart", e => {
+        if (!["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) {
+            e.preventDefault();
+        }
+    });
 
-    const fileInput =
-        document.getElementById("mml-file");
+    document.addEventListener("keydown", e => {
+        const k = e.key.toLowerCase();
 
-    const parseBtn =
-        document.getElementById("parse-btn");
-
-    const resetBtn =
-        document.getElementById("reset-btn");
-
-    const xlsxBtn =
-        document.getElementById("xlsx-btn");
-
-    const status =
-        document.getElementById("mml-status");
-
-    const table =
-        document.getElementById("result-table");
-
-    const tbody =
-        table.querySelector("tbody");
-
-    const fileName =
-        document.getElementById("file-name");
-
-
-    /* =====================================================
-       GLOBAL DATA
-       ===================================================== */
-
-    let allResults = [];
-
-    let tables = {};
-
-    let errors = [];
-
-    let noMatch = [];
-
-    let opSuccess = [];
-
-    let currentPage = 1;
-
-    let rowsPerPage = 25;
-
-
-    /* =====================================================
-       FAILED PATTERNS
-
-       Sama dengan Python
-       ===================================================== */
-
-    const failedPatterns = [
-
-        "Failure",
-
-        "not connected",
-
-        "Failed to query NE information",
-
-        "Command does not exist",
-
-        "The cell power exceeds the RRU capability",
-
-        "Failed to obtain the cell power license",
-
-        "The object does not exist",
-
-        "Permission denied"
-
-    ];
-
-
-    /* =====================================================
-       TEXT HELPER
-       ===================================================== */
-
-    function text(value) {
-
-        if (
-            value === undefined ||
-            value === null
-        ) {
-            return "";
+        if (e.key === "F12") {
+            e.preventDefault();
+            return;
         }
 
-        return String(value);
+        if ((e.ctrlKey || e.metaKey) &&
+            ["c", "x", "s", "u", "p"].includes(k)) {
+            e.preventDefault();
+            return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey &&
+            ["i", "j", "c"].includes(k)) {
+            e.preventDefault();
+        }
+    });
+
+    const style = document.createElement("style");
+    style.textContent = `
+        body { user-select:none; -webkit-user-select:none; }
+        input, textarea, select { user-select:text; -webkit-user-select:text; }
+        img { -webkit-user-drag:none; }
+
+        #mml-tabs {
+            display:flex;
+            flex-wrap:wrap;
+            gap:6px;
+            margin:16px 0 12px;
+            border-bottom:1px solid #ddd;
+            padding-bottom:8px;
+        }
+
+        .mml-tab {
+            border:1px solid #d9dfe8;
+            background:#fff;
+            border-radius:7px;
+            padding:8px 12px;
+            cursor:pointer;
+            font-weight:600;
+        }
+
+        .mml-tab.active {
+            background:#1667d9;
+            color:#fff;
+            border-color:#1667d9;
+        }
+
+        .mml-tab-count {
+            font-weight:400;
+            opacity:.8;
+            margin-left:4px;
+        }
+
+        #mml-sheet-title {
+            font-weight:700;
+            margin:8px 0;
+        }
+
+        #mml-pagination {
+            margin:14px 0;
+        }
+
+        .mml-pagination-top {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:10px;
+            font-size:14px;
+        }
+
+        .mml-rows-control {
+            display:flex;
+            align-items:center;
+            gap:7px;
+        }
+
+        #mml-rows-select {
+            padding:5px 8px;
+            border:1px solid #d9dfe8;
+            border-radius:6px;
+            background:#fff;
+        }
+
+        .mml-pagination-bottom {
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            gap:5px;
+            flex-wrap:wrap;
+        }
+
+        #mml-page-buttons {
+            display:flex;
+            gap:5px;
+            flex-wrap:wrap;
+            justify-content:center;
+        }
+
+        .mml-page-btn {
+            min-width:34px;
+            height:34px;
+            padding:0 9px;
+            border:1px solid #d9dfe8;
+            border-radius:6px;
+            background:#fff;
+            cursor:pointer;
+        }
+
+        .mml-page-btn.active {
+            background:#1667d9;
+            color:#fff;
+            border-color:#1667d9;
+            font-weight:700;
+        }
+
+        .mml-page-btn:disabled {
+            opacity:.5;
+            cursor:not-allowed;
+        }
+
+        .mml-page-dots {
+            padding:7px 3px;
+        }
+
+        @media (max-width:600px) {
+            .mml-pagination-top {
+                flex-direction:column;
+                align-items:flex-start;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    /* ---------- Elements ---------- */
+    const fileInput = document.getElementById("mml-file");
+    const parseBtn = document.getElementById("parse-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const status = document.getElementById("mml-status");
+    const table = document.getElementById("result-table");
+    const tbody = table ? table.querySelector("tbody") : null;
+    const fileName = document.getElementById("file-name");
+
+    const exportBtn =
+        document.getElementById("xlsx-btn") ||
+        document.getElementById("csv-btn");
+
+    if (exportBtn) {
+        exportBtn.textContent = "Download XLSX";
+        exportBtn.disabled = true;
     }
 
+    /* ---------- State ---------- */
+    let tables = {};
+    let errors = [];
+    let noMatch = [];
+    let opSuccess = [];
 
-    /* =====================================================
-       TABLE NAME
+    let activeSheet = "FAILED";
+    let rowsPerPage = 25;
+    let currentPage = 1;
 
-       Python:
-       re.sub(r'\W+', "_", command)[:31]
-       ===================================================== */
+    const failedPatterns = [
+        "Failure",
+        "not connected",
+        "Failed to query NE information",
+        "Command does not exist",
+        "The cell power exceeds the RRU capability",
+        "Failed to obtain the cell power license",
+        "The object does not exist",
+        "Permission denied"
+    ];
+
+    function text(v) {
+        return v === undefined || v === null ? "" : String(v);
+    }
+
+    function escapeHTML(v) {
+        return text(v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
     function makeTableName(command) {
-
-        return command
-            .replace(/[^\w]+/g, "_")
-            .substring(0, 31);
+        return command.replace(/[^\w]+/g, "_").substring(0, 31);
     }
 
-
-    /* =====================================================
-       ADD DYNAMIC HEADERS
-       ===================================================== */
-
-    function addHeaders(
-        tableData,
-        rowDict
-    ) {
-
-        Object.keys(rowDict).forEach(
-            function (key) {
-
-                if (
-                    !tableData.header
-                        .includes(key)
-                ) {
-
-                    tableData.header.push(key);
-                }
-
-            }
-        );
+    function addHeaders(t, row) {
+        Object.keys(row).forEach(k => {
+            if (!t.header.includes(k)) t.header.push(k);
+        });
     }
-
-
-    /* =====================================================
-       PARSE MML
-       ===================================================== */
 
     function parseMML(sourceText) {
-
-        const lines =
-            sourceText.split(/\r?\n/);
-
+        const lines = sourceText.split(/\r?\n/);
 
         tables = {};
-
         errors = [];
-
         noMatch = [];
-
         opSuccess = [];
 
-
         let neName = "";
-
         let command = "";
-
         let i = 0;
 
-
         while (i < lines.length) {
+            const line = lines[i].trim();
 
-            const line =
-                lines[i].trim();
-
-
-            /* =============================================
-               NE NAME
-               ============================================= */
-
+            /* NE NAME */
             if (line.includes("+++")) {
-
-                const m =
-                    line.match(
-                        /\+{3}\s+(.+?)\s+\d{4}-\d{2}-\d{2}/
-                    );
-
-
-                if (m) {
-
-                    neName =
-                        m[1].trim();
-                }
-
-            }
-
-            else if (
-                line.startsWith("NE :")
-            ) {
-
-                neName =
-                    line
-                        .replace("NE :", "")
-                        .trim();
-            }
-
-            else if (
-
+                const m = line.match(/\+{3}\s+(.+?)\s+\d{4}-\d{2}-\d{2}/);
+                if (m) neName = m[1].trim();
+            } else if (line.startsWith("NE :")) {
+                neName = line.replace("NE :", "").trim();
+            } else if (
                 line.includes("#") &&
-
                 !line.includes("+++") &&
-
                 !line.startsWith("%%") &&
-
                 !line.startsWith("O&M") &&
-
                 !line.startsWith("---")
-
             ) {
-
-                neName =
-                    line.trim();
+                neName = line.trim();
             }
 
-
-            /* =============================================
-               COMMAND
-               ============================================= */
-
+            /* COMMAND */
             const commandMatch =
-                line.match(
-                    /(MOD|ADD|RMV|SET|LST|DSP)\s+([A-Z0-9_]+)/
-                );
-
+                line.match(/(MOD|ADD|RMV|SET|LST|DSP)\s+([A-Z0-9_]+)/);
 
             if (commandMatch) {
-
-                command =
-                    `${commandMatch[1]} ${commandMatch[2]}`;
+                command = `${commandMatch[1]} ${commandMatch[2]}`;
             }
 
-
-            /* =============================================
-               FAILED
-               ============================================= */
-
-            for (
-                const pattern
-                of failedPatterns
-            ) {
-
-                if (
-                    line.includes(pattern)
-                ) {
-
-                    errors.push([
-                        neName,
-                        command,
-                        line
-                    ]);
-
+            /* FAILED */
+            for (const pattern of failedPatterns) {
+                if (line.includes(pattern)) {
+                    errors.push([neName, command, line]);
                     break;
                 }
             }
 
-
-            /* =============================================
-               NO MATCH
-               ============================================= */
-
-            if (
-                line.includes(
-                    "No matching result"
-                )
-            ) {
-
-                noMatch.push([
-                    neName,
-                    command,
-                    line
-                ]);
+            /* NO MATCH */
+            if (line.includes("No matching result")) {
+                noMatch.push([neName, command, line]);
             }
 
-
-            /* =============================================
-               SUCCESS
-               ============================================= */
-
-            if (
-                line.includes(
-                    "Operation succeeded"
-                )
-            ) {
-
-                opSuccess.push([
-                    neName,
-                    command,
-                    line
-                ]);
+            /* SUCCESS */
+            if (line.includes("Operation succeeded")) {
+                opSuccess.push([neName, command, line]);
             }
 
-
-            /* =============================================
-               TABLE BLOCK
-               ============================================= */
-
-            if (
-                line.startsWith(
-                    "------------"
-                )
-            ) {
-
+            /* RESULT BLOCK */
+            if (line.startsWith("------------")) {
                 i++;
-
                 const block = [];
 
-
-                while (
-                    i < lines.length
-                ) {
-
-                    const row =
-                        lines[i].trim();
-
+                while (i < lines.length) {
+                    const row = lines[i].trim();
 
                     if (
-
-                        row.startsWith(
-                            "(Number of results"
-                        ) ||
-
+                        row.startsWith("(Number of results") ||
                         row.startsWith("---")
-
                     ) {
-
                         break;
                     }
 
-
-                    if (row !== "") {
-
-                        block.push(row);
-                    }
-
-
+                    if (row !== "") block.push(row);
                     i++;
                 }
 
+                if (block.length > 0) {
+                    const tableName = makeTableName(command);
 
-                if (
-                    block.length > 0
-                ) {
-
-                    const tableName =
-                        makeTableName(
-                            command
-                        );
-
-
-                    if (
-                        !tables[tableName]
-                    ) {
-
+                    if (!tables[tableName]) {
                         tables[tableName] = {
-
-                            header: [
-                                "NE_NAME",
-                                "MML Command"
-                            ],
-
+                            header: ["NE_NAME", "MML Command"],
                             rows: []
                         };
                     }
 
+                    const t = tables[tableName];
 
-                    /* =====================================
-                       KEY = VALUE
-                       ===================================== */
-
-                    if (
-                        block[0].includes("=")
-                    ) {
-
+                    /* KEY = VALUE */
+                    if (block[0].includes("=")) {
                         const rowDict = {
-
-                            "NE_NAME":
-                                neName,
-
-                            "MML Command":
-                                command
-
+                            NE_NAME: neName,
+                            "MML Command": command
                         };
 
+                        for (const r of block) {
+                            const m = r.match(/^(.+?)\s*=\s*(.+)$/);
+                            if (!m) continue;
 
-                        for (
-                            const r
-                            of block
-                        ) {
+                            const k = m[1].trim();
+                            const v = m[2].trim();
 
-                            const m =
-                                r.match(
-                                    /^(.+?)\s*=\s*(.+)$/
-                                );
+                            if (v.includes("&") && v.includes(":")) {
+                                for (const sub of v.split("&")) {
+                                    if (!sub.includes(":")) continue;
 
+                                    const p = sub.indexOf(":");
+                                    const sk = sub.substring(0, p).trim();
+                                    const sv = sub.substring(p + 1).trim();
 
-                            if (!m) {
-                                continue;
-                            }
-
-
-                            const k =
-                                m[1].trim();
-
-                            const v =
-                                m[2].trim();
-
-
-                            /* =================================
-                               SUB PARAMETERS
-
-                               Example:
-                               A:1&B:2&C:3
-                               ================================= */
-
-                            if (
-
-                                v.includes("&") &&
-
-                                v.includes(":")
-
-                            ) {
-
-                                const subParams =
-                                    v.split("&");
-
-
-                                for (
-                                    const sub
-                                    of subParams
-                                ) {
-
-                                    if (
-                                        !sub.includes(":")
-                                    ) {
-                                        continue;
-                                    }
-
-
-                                    const separator =
-                                        sub.indexOf(":");
-
-
-                                    const sk =
-                                        sub
-                                            .substring(
-                                                0,
-                                                separator
-                                            )
-                                            .trim();
-
-
-                                    const sv =
-                                        sub
-                                            .substring(
-                                                separator + 1
-                                            )
-                                            .trim();
-
-
-                                    rowDict[sk] =
-                                        sv;
+                                    rowDict[sk] = sv;
                                 }
-
-                            }
-
-                            else {
-
-                                rowDict[k] =
-                                    v;
+                            } else {
+                                rowDict[k] = v;
                             }
                         }
 
-
-                        addHeaders(
-                            tables[tableName],
-                            rowDict
-                        );
-
-
-                        tables[tableName]
-                            .rows
-                            .push(rowDict);
+                        addHeaders(t, rowDict);
+                        t.rows.push(rowDict);
                     }
 
-
-                    /* =====================================
-                       NORMAL TABLE
-                       ===================================== */
-
+                    /* NORMAL TABLE */
                     else {
+                        const headerLine = block[0].split(/\s{2,}/);
 
-                        const headerLine =
-                            block[0]
-                                .split(/\s{2,}/);
-
-
-                        for (
-                            let r = 1;
-                            r < block.length;
-                            r++
-                        ) {
-
-                            const cols =
-                                block[r]
-                                    .split(/\s{2,}/);
-
+                        for (let r = 1; r < block.length; r++) {
+                            const cols = block[r].split(/\s{2,}/);
 
                             const rowDict = {
-
-                                "NE_NAME":
-                                    neName,
-
-                                "MML Command":
-                                    command
-
+                                NE_NAME: neName,
+                                "MML Command": command
                             };
 
+                            const count = Math.min(
+                                headerLine.length,
+                                cols.length
+                            );
 
-                            const count =
-                                Math.min(
-                                    headerLine.length,
-                                    cols.length
-                                );
+                            for (let c = 0; c < count; c++) {
+                                const h = headerLine[c];
+                                const v = cols[c];
 
+                                if (v.includes("&") && v.includes(":")) {
+                                    for (const sub of v.split("&")) {
+                                        if (!sub.includes(":")) continue;
 
-                            for (
-                                let c = 0;
-                                c < count;
-                                c++
-                            ) {
+                                        const p = sub.indexOf(":");
+                                        const sk = sub.substring(0, p).trim();
+                                        const sv = sub.substring(p + 1).trim();
 
-                                const h =
-                                    headerLine[c];
-
-                                const v =
-                                    cols[c];
-
-
-                                if (
-
-                                    v.includes("&") &&
-
-                                    v.includes(":")
-
-                                ) {
-
-                                    const subParams =
-                                        v.split("&");
-
-
-                                    for (
-                                        const sub
-                                        of subParams
-                                    ) {
-
-                                        if (
-                                            !sub.includes(":")
-                                        ) {
-                                            continue;
-                                        }
-
-
-                                        const separator =
-                                            sub.indexOf(":");
-
-
-                                        const sk =
-                                            sub
-                                                .substring(
-                                                    0,
-                                                    separator
-                                                )
-                                                .trim();
-
-
-                                        const sv =
-                                            sub
-                                                .substring(
-                                                    separator + 1
-                                                )
-                                                .trim();
-
-
-                                        rowDict[sk] =
-                                            sv;
+                                        rowDict[sk] = sv;
                                     }
-
-                                }
-
-                                else {
-
-                                    rowDict[h] =
-                                        v;
+                                } else {
+                                    rowDict[h] = v;
                                 }
                             }
 
-
-                            addHeaders(
-                                tables[tableName],
-                                rowDict
-                            );
-
-
-                            tables[tableName]
-                                .rows
-                                .push(rowDict);
+                            addHeaders(t, rowDict);
+                            t.rows.push(rowDict);
                         }
                     }
                 }
             }
-
 
             i++;
         }
-
-
-        /* =============================================
-           FLATTEN FOR DISPLAY
-           ============================================= */
-
-        const flattened = [];
-
-
-        /* FAILED */
-
-        errors.forEach(
-            function (r) {
-
-                flattened.push({
-
-                    type: "FAILED",
-
-                    NE_NAME: r[0],
-
-                    "MML Command": r[1],
-
-                    Message: r[2]
-
-                });
-            }
-        );
-
-
-        /* NO MATCH */
-
-        noMatch.forEach(
-            function (r) {
-
-                flattened.push({
-
-                    type: "NO_MATCH",
-
-                    NE_NAME: r[0],
-
-                    "MML Command": r[1],
-
-                    Message: r[2]
-
-                });
-            }
-        );
-
-
-        /* SUCCESS */
-
-        opSuccess.forEach(
-            function (r) {
-
-                flattened.push({
-
-                    type: "SUCCESS",
-
-                    NE_NAME: r[0],
-
-                    "MML Command": r[1],
-
-                    Message: r[2]
-
-                });
-            }
-        );
-
-
-        /* DATA */
-
-        Object.keys(tables)
-            .forEach(
-                function (name) {
-
-                    tables[name]
-                        .rows
-                        .forEach(
-                            function (row) {
-
-                                flattened.push({
-
-                                    type: "DATA",
-
-                                    table: name,
-
-                                    ...row
-
-                                });
-                            }
-                        );
-                }
-            );
-
-
-        return flattened;
     }
 
-
-    /* =====================================================
-       DISPLAY OBJECT
-       ===================================================== */
-
-    function getDisplayObject(item) {
-
-        if (
-
-            item.type === "FAILED" ||
-
-            item.type === "NO_MATCH" ||
-
-            item.type === "SUCCESS"
-
-        ) {
-
-            return "";
+    /* ---------- Sheet helpers ---------- */
+    function getSheetRows(name) {
+        if (name === "FAILED") {
+            return errors.map(r => ({
+                NE_NAME: r[0],
+                "MML Command": r[1],
+                Message: r[2]
+            }));
         }
 
+        if (name === "NO_MATCH") {
+            return noMatch.map(r => ({
+                NE_NAME: r[0],
+                "MML Command": r[1],
+                Message: r[2]
+            }));
+        }
 
-        const preferredKeys = [
+        if (name === "LOG_SUCCESS") {
+            return opSuccess.map(r => ({
+                NE_NAME: r[0],
+                "MML Command": r[1],
+                Message: r[2]
+            }));
+        }
 
+        return tables[name] ? tables[name].rows : [];
+    }
+
+    function getSheetHeader(name) {
+        if (
+            name === "FAILED" ||
+            name === "NO_MATCH" ||
+            name === "LOG_SUCCESS"
+        ) {
+            return ["NE_NAME", "MML Command", "Message"];
+        }
+
+        return tables[name] ? tables[name].header : [];
+    }
+
+    function getSheetNames() {
+        const names = ["FAILED", "NO_MATCH", "LOG_SUCCESS"];
+
+        Object.keys(tables).forEach(name => {
+            if (!names.includes(name)) names.push(name);
+        });
+
+        return names;
+    }
+
+    function getObject(row) {
+        const keys = [
             "NR Cell ID",
-
             "NR DU Cell TRP ID",
-
             "NR DU Cell ID",
-
             "Cell ID",
-
             "Cell Name",
-
             "Object ID",
-
             "Object Name"
-
         ];
 
-
-        for (
-            const key
-            of preferredKeys
-        ) {
-
-            if (
-
-                item[key] !== undefined &&
-
-                item[key] !== ""
-
-            ) {
-
-                return text(
-                    item[key]
-                );
-            }
+        for (const k of keys) {
+            if (row[k] !== undefined && row[k] !== "") return row[k];
         }
 
-
-        for (
-            const key
-            of Object.keys(item)
-        ) {
-
-            const upper =
-                key.toUpperCase();
-
+        for (const k of Object.keys(row)) {
+            const u = k.toUpperCase();
 
             if (
-
-                upper.includes("OBJ") ||
-
-                upper.includes("CELL") ||
-
-                upper.includes("TRP")
-
+                (u.includes("OBJ") ||
+                 u.includes("CELL") ||
+                 u.includes("TRP")) &&
+                row[k] !== undefined &&
+                row[k] !== ""
             ) {
-
-                if (
-
-                    item[key] !== undefined &&
-
-                    item[key] !== ""
-
-                ) {
-
-                    return text(
-                        item[key]
-                    );
-                }
+                return row[k];
             }
         }
-
 
         return "";
     }
 
+    function getRaw(row) {
+        return row.Message !== undefined ? row.Message : "";
+    }
 
-    /* =====================================================
-       DISPLAY RAW / MESSAGE
-       ===================================================== */
+    /* ---------- Build tab UI ---------- */
+    function createSheetUI() {
+        let tabs = document.getElementById("mml-tabs");
 
-    function getDisplayRaw(item) {
+        if (!tabs) {
+            tabs = document.createElement("div");
+            tabs.id = "mml-tabs";
 
-        if (
-            item.Message !== undefined
-        ) {
-
-            return text(
-                item.Message
-            );
+            if (table && table.parentNode) {
+                table.parentNode.insertBefore(tabs, table);
+            }
         }
 
+        let title = document.getElementById("mml-sheet-title");
 
-        return "";
+        if (!title) {
+            title = document.createElement("div");
+            title.id = "mml-sheet-title";
+
+            if (table && table.parentNode) {
+                table.parentNode.insertBefore(title, table);
+            }
+        }
+
+        tabs.innerHTML = "";
+
+        getSheetNames().forEach(name => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "mml-tab";
+            btn.textContent = name;
+
+            const count = document.createElement("span");
+            count.className = "mml-tab-count";
+            count.textContent =
+                `(${getSheetRows(name).length.toLocaleString()})`;
+
+            btn.appendChild(count);
+
+            if (name === activeSheet) {
+                btn.classList.add("active");
+            }
+
+            btn.addEventListener("click", () => {
+                activeSheet = name;
+                currentPage = 1;
+                createSheetUI();
+                renderPage();
+            });
+
+            tabs.appendChild(btn);
+        });
+
+        title.textContent =
+            `${activeSheet} — ${getSheetRows(activeSheet).length.toLocaleString()} rows`;
     }
-        /* =====================================================
-       PAGINATION ELEMENT
-       ===================================================== */
 
-    let paginationContainer = null;
-
-
+    /* ---------- Pagination ---------- */
     function createPagination() {
+        let p = document.getElementById("mml-pagination");
+        if (p) return p;
 
-        if (paginationContainer) {
-            return;
-        }
+        p = document.createElement("div");
+        p.id = "mml-pagination";
 
-
-        paginationContainer =
-            document.createElement("div");
-
-        paginationContainer.id =
-            "mml-pagination";
-
-
-        paginationContainer.innerHTML = `
-
+        p.innerHTML = `
             <div class="mml-pagination-top">
-
-                <div id="mml-page-info">
-                    No data
-                </div>
-
+                <div id="mml-page-info">No data</div>
                 <div class="mml-rows-control">
-
-                    <label for="mml-rows-select">
-                        Rows:
-                    </label>
-
+                    <label for="mml-rows-select">Rows:</label>
                     <select id="mml-rows-select">
-
-                        <option value="10">
-                            10
-                        </option>
-
-                        <option value="25" selected>
-                            25
-                        </option>
-
-                        <option value="50">
-                            50
-                        </option>
-
-                        <option value="100">
-                            100
-                        </option>
-
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
                     </select>
-
                 </div>
-
             </div>
-
 
             <div class="mml-pagination-bottom">
-
-                <button
-                    type="button"
-                    id="mml-prev-btn"
-                    class="mml-page-btn"
-                >
-                    Previous
-                </button>
-
-
+                <button type="button" id="mml-prev-btn"
+                        class="mml-page-btn">Previous</button>
                 <div id="mml-page-buttons"></div>
-
-
-                <button
-                    type="button"
-                    id="mml-next-btn"
-                    class="mml-page-btn"
-                >
-                    Next
-                </button>
-
+                <button type="button" id="mml-next-btn"
+                        class="mml-page-btn">Next</button>
             </div>
-
         `;
 
-
-        /*
-         * IMPORTANT:
-         * Pagination diletakkan sebelum tombol export,
-         * bukan di dalam parent table.
-         */
-
-        if (xlsxBtn) {
-
-            xlsxBtn.parentNode.insertBefore(
-                paginationContainer,
-                xlsxBtn
-            );
-
+        if (exportBtn && exportBtn.parentNode) {
+            exportBtn.parentNode.insertBefore(p, exportBtn);
+        } else if (table && table.parentNode) {
+            table.parentNode.appendChild(p);
         }
 
-        else {
+        document.getElementById("mml-rows-select")
+            .addEventListener("change", e => {
+                rowsPerPage = parseInt(e.target.value, 10);
+                currentPage = 1;
+                renderPage();
+            });
 
-            table.parentNode.appendChild(
-                paginationContainer
-            );
-        }
-
-
-        document
-            .getElementById("mml-rows-select")
-            .addEventListener(
-                "change",
-                function () {
-
-                    rowsPerPage =
-                        parseInt(
-                            this.value,
-                            10
-                        );
-
-                    currentPage = 1;
-
+        document.getElementById("mml-prev-btn")
+            .addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
                     renderPage();
                 }
-            );
+            });
 
+        document.getElementById("mml-next-btn")
+            .addEventListener("click", () => {
+                const totalPages = Math.max(
+                    1,
+                    Math.ceil(
+                        getSheetRows(activeSheet).length /
+                        rowsPerPage
+                    )
+                );
 
-        document
-            .getElementById("mml-prev-btn")
-            .addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        currentPage > 1
-                    ) {
-
-                        currentPage--;
-
-                        renderPage();
-                    }
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
                 }
-            );
+            });
 
-
-        document
-            .getElementById("mml-next-btn")
-            .addEventListener(
-                "click",
-                function () {
-
-                    const totalPages =
-                        Math.ceil(
-                            allResults.length /
-                            rowsPerPage
-                        );
-
-
-                    if (
-                        currentPage <
-                        totalPages
-                    ) {
-
-                        currentPage++;
-
-                        renderPage();
-                    }
-                }
-            );
+        return p;
     }
 
-
-    /* =====================================================
-       PAGE NUMBER GENERATOR
-       ===================================================== */
-
-    function getPageNumbers(
-        current,
-        total
-    ) {
-
+    function pageNumbers(current, total) {
         if (total <= 7) {
-
-            return Array.from(
-                {
-                    length: total
-                },
-                function (_, i) {
-
-                    return i + 1;
-                }
-            );
+            return Array.from({length: total}, (_, i) => i + 1);
         }
 
+        const out = [1];
 
-        const pages = [];
-
-
-        pages.push(1);
-
-
-        if (current > 4) {
-
-            pages.push("...");
-        }
-
-
-        const start =
-            Math.max(
-                2,
-                current - 1
-            );
-
-
-        const end =
-            Math.min(
-                total - 1,
-                current + 1
-            );
-
+        if (current > 4) out.push("...");
 
         for (
-            let i = start;
-            i <= end;
+            let i = Math.max(2, current - 1);
+            i <= Math.min(total - 1, current + 1);
             i++
         ) {
-
-            pages.push(i);
+            out.push(i);
         }
 
+        if (current < total - 3) out.push("...");
 
-        if (
-            current < total - 3
-        ) {
-
-            pages.push("...");
-        }
-
-
-        pages.push(total);
-
-
-        return pages;
+        out.push(total);
+        return out;
     }
-
-
-    /* =====================================================
-       RENDER PAGINATION
-       ===================================================== */
-
-    function renderPagination() {
-
-        if (!paginationContainer) {
-            return;
-        }
-
-
-        const totalRows =
-            allResults.length;
-
-
-        const totalPages =
-            Math.max(
-                1,
-                Math.ceil(
-                    totalRows /
-                    rowsPerPage
-                )
-            );
-
-
-        if (
-            currentPage > totalPages
-        ) {
-
-            currentPage =
-                totalPages;
-        }
-
-
-        const start =
-            totalRows === 0
-                ? 0
-                : (
-                    (currentPage - 1) *
-                    rowsPerPage
-                ) + 1;
-
-
-        const end =
-            Math.min(
-                currentPage *
-                rowsPerPage,
-                totalRows
-            );
-
-
-        const pageInfo =
-            document.getElementById(
-                "mml-page-info"
-            );
-
-
-        pageInfo.textContent =
-            totalRows === 0
-                ? "No data"
-                : `Showing ${start}-${end} of ${totalRows}`;
-
-
-        const pageButtons =
-            document.getElementById(
-                "mml-page-buttons"
-            );
-
-
-        pageButtons.innerHTML = "";
-
-
-        const pageNumbers =
-            getPageNumbers(
-                currentPage,
-                totalPages
-            );
-
-
-        pageNumbers.forEach(
-            function (page) {
-
-                if (page === "...") {
-
-                    const dots =
-                        document.createElement(
-                            "span"
-                        );
-
-                    dots.className =
-                        "mml-page-dots";
-
-                    dots.textContent =
-                        "...";
-
-                    pageButtons.appendChild(
-                        dots
-                    );
-
-                    return;
-                }
-
-
-                const btn =
-                    document.createElement(
-                        "button"
-                    );
-
-
-                btn.type =
-                    "button";
-
-
-                btn.className =
-                    "mml-page-btn";
-
-
-                btn.textContent =
-                    page;
-
-
-                if (
-                    page === currentPage
-                ) {
-
-                    btn.classList.add(
-                        "active"
-                    );
-                }
-
-
-                btn.addEventListener(
-                    "click",
-                    function () {
-
-                        currentPage =
-                            page;
-
-                        renderPage();
-                    }
-                );
-
-
-                pageButtons.appendChild(
-                    btn
-                );
-
-            }
-        );
-
-
-        const prevBtn =
-            document.getElementById(
-                "mml-prev-btn"
-            );
-
-
-        const nextBtn =
-            document.getElementById(
-                "mml-next-btn"
-            );
-
-
-        prevBtn.disabled =
-            currentPage <= 1;
-
-
-        nextBtn.disabled =
-            currentPage >= totalPages;
-    }
-
-
-    /* =====================================================
-       RENDER TABLE
-       ===================================================== */
 
     function renderPage() {
+        if (!tbody) return;
+
+        const rows = getSheetRows(activeSheet);
+        const total = rows.length;
+        const totalPages = Math.max(
+            1,
+            Math.ceil(total / rowsPerPage)
+        );
+
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = total === 0
+            ? 0
+            : (currentPage - 1) * rowsPerPage;
+
+        const end = Math.min(
+            start + rowsPerPage,
+            total
+        );
 
         tbody.innerHTML = "";
 
+        rows.slice(start, end).forEach((row, idx) => {
+            const tr = document.createElement("tr");
 
-        const totalRows =
-            allResults.length;
+            tr.innerHTML = `
+                <td>${escapeHTML(start + idx + 1)}</td>
+                <td>${escapeHTML(row.NE_NAME)}</td>
+                <td>${escapeHTML(row["MML Command"])}</td>
+                <td>${escapeHTML(getObject(row))}</td>
+                <td>${escapeHTML(getRaw(row))}</td>
+            `;
 
+            tbody.appendChild(tr);
+        });
 
-        const startIndex =
-            (currentPage - 1) *
-            rowsPerPage;
+        createPagination();
 
-
-        const endIndex =
-            Math.min(
-                startIndex +
-                rowsPerPage,
-                totalRows
-            );
-
-
-        const pageData =
-            allResults.slice(
-                startIndex,
-                endIndex
-            );
-
-
-        pageData.forEach(
-            function (item, index) {
-
-                const tr =
-                    document.createElement(
-                        "tr"
-                    );
-
-
-                const no =
-                    startIndex +
-                    index +
-                    1;
-
-
-                const neName =
-                    text(
-                        item.NE_NAME
-                    );
-
-
-                const mmlCommand =
-                    text(
-                        item["MML Command"]
-                    );
-
-
-                const object =
-                    getDisplayObject(
-                        item
-                    );
-
-
-                const raw =
-                    getDisplayRaw(
-                        item
-                    );
-
-
-                tr.innerHTML = `
-
-                    <td>${escapeHTML(no)}</td>
-
-                    <td>${escapeHTML(neName)}</td>
-
-                    <td>${escapeHTML(mmlCommand)}</td>
-
-                    <td>${escapeHTML(object)}</td>
-
-                    <td>${escapeHTML(raw)}</td>
-
-                `;
-
-
-                tbody.appendChild(
-                    tr
-                );
-            }
-        );
-
-
-        renderPagination();
-    }
-
-
-    /* =====================================================
-       ESCAPE HTML
-       ===================================================== */
-
-    function escapeHTML(value) {
-
-        return text(value)
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-    }
-
-
-    /* =====================================================
-       XLSX LOADER
-       
-       Tidak perlu edit HTML.
-       Kalau SheetJS belum ada, JS akan load otomatis.
-       ===================================================== */
-
-    function loadXLSX() {
-
-        if (
-            typeof window.XLSX !==
-            "undefined"
-        ) {
-
-            return Promise.resolve();
+        const info = document.getElementById("mml-page-info");
+        if (info) {
+            info.textContent = total === 0
+                ? "No data"
+                : `Showing ${start + 1}-${end} of ${total.toLocaleString()}`;
         }
 
-
-        return new Promise(
-            function (resolve, reject) {
-
-                const script =
-                    document.createElement(
-                        "script"
-                    );
-
-
-                script.src =
-                    "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
-
-
-                script.onload =
-                    function () {
-
-                        resolve();
-                    };
-
-
-                script.onerror =
-                    function () {
-
-                        reject(
-                            new Error(
-                                "Failed to load SheetJS"
-                            )
-                        );
-                    };
-
-
-                document.head.appendChild(
-                    script
-                );
-            }
-        );
-    }
-
-
-    /* =====================================================
-       CONVERT ARRAY OF OBJECTS TO XLSX ROWS
-       ===================================================== */
-
-    function buildSheetData(
-        header,
-        rows
-    ) {
-
-        const output = [];
-
-
-        /* HEADER */
-
-        output.push(
-            header
-        );
-
-
-        /* ROWS */
-
-        rows.forEach(
-            function (row) {
-
-                const values =
-                    header.map(
-                        function (key) {
-
-                            return row[key] !==
-                                undefined
-                                ? row[key]
-                                : "";
-                        }
-                    );
-
-
-                output.push(
-                    values
-                );
-            }
-        );
-
-
-        return output;
-    }
-
-
-    /* =====================================================
-       ERROR SHEET
-       ===================================================== */
-
-    function buildErrorSheet() {
-
-        const data = [
-
-            [
-                "NE_NAME",
-                "MML Command",
-                "MESSAGE"
-            ]
-
-        ];
-
-
-        errors.forEach(
-            function (row) {
-
-                data.push([
-
-                    row[0],
-
-                    row[1],
-
-                    row[2]
-
-                ]);
-            }
-        );
-
-
-        return data;
-    }
-
-
-    /* =====================================================
-       NO MATCH SHEET
-       ===================================================== */
-
-    function buildNoMatchSheet() {
-
-        const data = [
-
-            [
-                "NE_NAME",
-                "MML Command",
-                "MESSAGE"
-            ]
-
-        ];
-
-
-        noMatch.forEach(
-            function (row) {
-
-                data.push([
-
-                    row[0],
-
-                    row[1],
-
-                    row[2]
-
-                ]);
-            }
-        );
-
-
-        return data;
-    }
-
-
-    /* =====================================================
-       SUCCESS SHEET
-       ===================================================== */
-
-    function buildSuccessSheet() {
-
-        const data = [
-
-            [
-                "NE_NAME",
-                "MML Command",
-                "MESSAGE"
-            ]
-
-        ];
-
-
-        opSuccess.forEach(
-            function (row) {
-
-                data.push([
-
-                    row[0],
-
-                    row[1],
-
-                    row[2]
-
-                ]);
-            }
-        );
-
-
-        return data;
-    }
-
-
-    /* =====================================================
-       AUTO WIDTH
-       ===================================================== */
-
-    function autoWidth(
-        worksheet
-    ) {
-
-        const range =
-            XLSX.utils.decode_range(
-                worksheet["!ref"]
-            );
-
-
-        const widths = [];
-
-
-        for (
-            let col =
-                range.s.c;
-            col <= range.e.c;
-            col++
-        ) {
-
-            let maxLength = 10;
-
-
-            for (
-                let row =
-                    range.s.r;
-                row <= range.e.r;
-                row++
-            ) {
-
-                const cell =
-                    worksheet[
-                        XLSX.utils.encode_cell({
-                            r: row,
-                            c: col
-                        })
-                    ];
-
-
-                if (
-                    !cell ||
-                    cell.v === undefined ||
-                    cell.v === null
-                ) {
-                    continue;
+        const buttons = document.getElementById("mml-page-buttons");
+        if (buttons) {
+            buttons.innerHTML = "";
+
+            pageNumbers(currentPage, totalPages).forEach(page => {
+                if (page === "...") {
+                    const dots = document.createElement("span");
+                    dots.className = "mml-page-dots";
+                    dots.textContent = "...";
+                    buttons.appendChild(dots);
+                    return;
                 }
 
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "mml-page-btn";
+                btn.textContent = page;
 
-                const length =
-                    String(cell.v)
-                        .length;
-
-
-                if (
-                    length >
-                    maxLength
-                ) {
-
-                    maxLength =
-                        length;
+                if (page === currentPage) {
+                    btn.classList.add("active");
                 }
-            }
 
+                btn.addEventListener("click", () => {
+                    currentPage = page;
+                    renderPage();
+                });
 
-            widths.push({
-
-                wch:
-                    Math.min(
-                        maxLength + 2,
-                        50
-                    )
-
+                buttons.appendChild(btn);
             });
         }
 
+        const prev = document.getElementById("mml-prev-btn");
+        const next = document.getElementById("mml-next-btn");
 
-        worksheet["!cols"] =
-            widths;
+        if (prev) prev.disabled = currentPage <= 1;
+        if (next) next.disabled = currentPage >= totalPages;
     }
 
-
-    /* =====================================================
-       STYLE SHEET
-       ===================================================== */
-
-    function prepareWorksheet(
-        worksheet
-    ) {
-
-        worksheet["!freeze"] = {
-
-            xSplit: 0,
-
-            ySplit: 1
-
-        };
-
-
-        if (
-            worksheet["!ref"]
-        ) {
-
-            worksheet["!autofilter"] = {
-
-                ref:
-                    worksheet["!ref"]
-
-            };
-        }
-
-
-        autoWidth(
-            worksheet
-        );
-    }
-
-
-    /* =====================================================
-       EXPORT XLSX
-       ===================================================== */
-
-    async function downloadXLSX() {
-
-        if (
-            allResults.length === 0
-        ) {
-
-            alert(
-                "Please parse an MML file first."
-            );
-
-            return;
-        }
-
-
-        try {
-
-            await loadXLSX();
-
-        }
-
-        catch (error) {
-
-            console.error(
-                error
-            );
-
-
-            alert(
-                "SheetJS failed to load. Please check your internet connection."
-            );
-
-            return;
-        }
-
-
-        const workbook =
-            XLSX.utils.book_new();
-
-
-        /* ==============================================
-           FAILED
-           ============================================== */
-
-        let worksheet =
-            XLSX.utils.aoa_to_sheet(
-                buildErrorSheet()
-            );
-
-
-        prepareWorksheet(
-            worksheet
-        );
-
-
-        XLSX.utils.book_append_sheet(
-            workbook,
-            worksheet,
-            "FAILED"
-        );
-
-
-        /* ==============================================
-           NO MATCH
-           ============================================== */
-
-        worksheet =
-            XLSX.utils.aoa_to_sheet(
-                buildNoMatchSheet()
-            );
-
-
-        prepareWorksheet(
-            worksheet
-        );
-
-
-        XLSX.utils.book_append_sheet(
-            workbook,
-            worksheet,
-            "NO_MATCH"
-        );
-
-
-        /* ==============================================
-           LOG SUCCESS
-           ============================================== */
-
-        worksheet =
-            XLSX.utils.aoa_to_sheet(
-                buildSuccessSheet()
-            );
-
-
-        prepareWorksheet(
-            worksheet
-        );
-
-
-        XLSX.utils.book_append_sheet(
-            workbook,
-            worksheet,
-            "LOG_SUCCESS"
-        );
-
-
-        /* ==============================================
-           COMMAND TABLES
-           ============================================== */
-
-        Object.keys(tables)
-            .forEach(
-                function (tableName) {
-
-                    const tableData =
-                        tables[tableName];
-
-
-                    const sheetData =
-                        buildSheetData(
-                            tableData.header,
-                            tableData.rows
-                        );
-
-
-                    const ws =
-                        XLSX.utils.aoa_to_sheet(
-                            sheetData
-                        );
-
-
-                    prepareWorksheet(
-                        ws
-                    );
-
-
-                    XLSX.utils.book_append_sheet(
-                        workbook,
-                        ws,
-                        tableName
-                    );
-
-                }
-            );
-
-
-        /* ==============================================
-           FILE NAME
-           ============================================== */
-
-        let outputName =
-            "MML_Task_Result_parsed.xlsx";
-
-
-        if (
-            fileInput.files &&
-            fileInput.files.length > 0
-        ) {
-
-            const originalName =
-                fileInput.files[0].name;
-
-
-            outputName =
-                originalName
-                    .replace(
-                        /\.[^/.]+$/,
-                        ""
-                    ) +
-                "_parsed.xlsx";
-        }
-
-
-        /* ==============================================
-           DOWNLOAD
-           ============================================== */
-
-        XLSX.writeFile(
-            workbook,
-            outputName
-        );
-    }
-
-
-    /* =====================================================
-       STATUS
-       ===================================================== */
-
+    /* ---------- Status ---------- */
     function updateStatus() {
+        let dataRows = 0;
 
-        const total =
-            allResults.length;
-
-
-        const failed =
-            errors.length;
-
-
-        const unmatched =
-            noMatch.length;
-
-
-        const success =
-            opSuccess.length;
-
-
-        let commandRows = 0;
-
-
-        Object.keys(tables)
-            .forEach(
-                function (name) {
-
-                    commandRows +=
-                        tables[name]
-                            .rows
-                            .length;
-                }
-            );
-
+        Object.values(tables).forEach(t => {
+            dataRows += t.rows.length;
+        });
 
         if (status) {
-
             status.textContent =
-                `Parsed ${total.toLocaleString()} rows ` +
-                `| FAILED: ${failed.toLocaleString()} ` +
-                `| NO_MATCH: ${unmatched.toLocaleString()} ` +
-                `| SUCCESS: ${success.toLocaleString()} ` +
-                `| DATA: ${commandRows.toLocaleString()}`;
+                `Parsed ${(errors.length + noMatch.length +
+                opSuccess.length + dataRows).toLocaleString()} rows` +
+                ` | FAILED: ${errors.length.toLocaleString()}` +
+                ` | NO_MATCH: ${noMatch.length.toLocaleString()}` +
+                ` | SUCCESS: ${opSuccess.length.toLocaleString()}` +
+                ` | DATA: ${dataRows.toLocaleString()}`;
         }
     }
 
+    /* ---------- SheetJS ---------- */
+    function loadXLSX() {
+        if (window.XLSX) return Promise.resolve();
 
-    /* =====================================================
-       FILE NAME DISPLAY
-       ===================================================== */
+        return new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src =
+                "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
 
-    function updateFileName() {
+            s.onload = resolve;
+            s.onerror = () =>
+                reject(new Error("Failed to load SheetJS"));
 
-        if (!fileName) {
+            document.head.appendChild(s);
+        });
+    }
+
+    function makeAOA(name) {
+        const header = getSheetHeader(name);
+        const rows = getSheetRows(name);
+
+        return [
+            header,
+            ...rows.map(row =>
+                header.map(key =>
+                    row[key] === undefined ? "" : row[key]
+                )
+            )
+        ];
+    }
+
+    function prepareWorksheet(ws) {
+        if (!ws["!ref"]) return;
+
+        ws["!freeze"] = {xSplit: 0, ySplit: 1};
+        ws["!autofilter"] = {ref: ws["!ref"]};
+
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        const widths = [];
+
+        for (let c = range.s.c; c <= range.e.c; c++) {
+            let max = 10;
+
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cell = ws[
+                    XLSX.utils.encode_cell({r, c})
+                ];
+
+                if (
+                    cell &&
+                    cell.v !== undefined &&
+                    cell.v !== null
+                ) {
+                    max = Math.max(
+                        max,
+                        String(cell.v).length
+                    );
+                }
+            }
+
+            widths.push({
+                wch: Math.min(max + 2, 50)
+            });
+        }
+
+        ws["!cols"] = widths;
+    }
+
+    async function downloadXLSX() {
+        try {
+            await loadXLSX();
+
+            const wb = XLSX.utils.book_new();
+
+            getSheetNames().forEach(name => {
+                const ws = XLSX.utils.aoa_to_sheet(
+                    makeAOA(name)
+                );
+
+                prepareWorksheet(ws);
+
+                XLSX.utils.book_append_sheet(
+                    wb,
+                    ws,
+                    name
+                );
+            });
+
+            let outputName = "MML_Task_Result_parsed.xlsx";
+
+            if (fileInput && fileInput.files.length) {
+                outputName =
+                    fileInput.files[0].name
+                        .replace(/\.[^/.]+$/, "") +
+                    "_parsed.xlsx";
+            }
+
+            /*
+             * compression:true is important.
+             * Browser XLSX can otherwise become much larger
+             * than the Python/openpyxl result.
+             */
+            XLSX.writeFile(
+                wb,
+                outputName,
+                {
+                    compression: true
+                }
+            );
+
+        } catch (err) {
+            console.error(err);
+            alert(
+                "Failed to create XLSX. Please check your connection and try again."
+            );
+        }
+    }
+
+    /* ---------- Parse ---------- */
+    parseBtn.addEventListener("click", () => {
+        if (!fileInput || !fileInput.files.length) {
+            alert("Please select an MML file first.");
             return;
         }
 
+        const reader = new FileReader();
 
-        if (
-            fileInput.files &&
-            fileInput.files.length > 0
-        ) {
+        reader.onload = e => {
+            try {
+                parseMML(e.target.result);
 
-            fileName.textContent =
-                fileInput.files[0].name;
-        }
+                activeSheet = "FAILED";
+                currentPage = 1;
+                rowsPerPage = 25;
 
-        else {
+                createSheetUI();
+                createPagination();
+                renderPage();
+                updateStatus();
 
-            fileName.textContent =
-                "";
-        }
-    }
-
-
-    /* =====================================================
-       PARSE BUTTON
-       ===================================================== */
-
-    parseBtn.addEventListener(
-        "click",
-        function () {
-
-            if (
-                !fileInput.files ||
-                fileInput.files.length === 0
-            ) {
-
-                alert(
-                    "Please select an MML file first."
-                );
-
-                return;
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Failed to parse MML file.");
             }
+        };
 
+        reader.onerror = () => {
+            alert("Failed to read the selected file.");
+        };
 
-            const file =
-                fileInput.files[0];
+        reader.readAsText(fileInput.files[0]);
+    });
 
-
-            const reader =
-                new FileReader();
-
-
-            reader.onload =
-                function (event) {
-
-                    try {
-
-                        const sourceText =
-                            event.target.result;
-
-
-                        allResults =
-                            parseMML(
-                                sourceText
-                            );
-
-
-                        currentPage = 1;
-
-                        rowsPerPage = 25;
-
-
-                        createPagination();
-
-
-                        renderPage();
-
-
-                        updateStatus();
-
-
-                        if (xlsxBtn) {
-
-                            xlsxBtn.disabled =
-                                allResults.length === 0;
-
-                        }
-
-                    }
-
-                    catch (error) {
-
-                        console.error(
-                            error
-                        );
-
-
-                        alert(
-                            "Failed to parse MML file."
-                        );
-
-                    }
-                };
-
-
-            reader.onerror =
-                function () {
-
-                    alert(
-                        "Failed to read the selected file."
-                    );
-                };
-
-
-            reader.readAsText(
-                file
-            );
-        }
-    );
-
-
-    /* =====================================================
-       RESET
-       ===================================================== */
-
-    resetBtn.addEventListener(
-        "click",
-        function () {
-
-            allResults = [];
-
-            tables = {};
-
-            errors = [];
-
-            noMatch = [];
-
-            opSuccess = [];
-
-            currentPage = 1;
-
-
-            tbody.innerHTML = "";
-
-
-            if (status) {
-
-                status.textContent =
-                    "";
-            }
-
-
-            if (fileInput) {
-
-                fileInput.value =
-                    "";
-            }
-
-
+    /* ---------- File name ---------- */
+    if (fileInput) {
+        fileInput.addEventListener("change", () => {
             if (fileName) {
-
                 fileName.textContent =
-                    "";
+                    fileInput.files.length
+                        ? fileInput.files[0].name
+                        : "Choose MML TXT or LOG file";
             }
+        });
+    }
 
+    /* ---------- Reset ---------- */
+    resetBtn.addEventListener("click", () => {
+        tables = {};
+        errors = [];
+        noMatch = [];
+        opSuccess = [];
 
-            if (xlsxBtn) {
+        activeSheet = "FAILED";
+        currentPage = 1;
 
-                xlsxBtn.disabled =
-                    true;
-            }
+        if (tbody) tbody.innerHTML = "";
+        if (fileInput) fileInput.value = "";
 
-
-            if (paginationContainer) {
-
-                paginationContainer
-                    .remove();
-
-                paginationContainer =
-                    null;
-            }
+        if (fileName) {
+            fileName.textContent =
+                "Choose MML TXT or LOG file";
         }
-    );
 
+        if (status) status.textContent = "Ready";
+        if (exportBtn) exportBtn.disabled = true;
 
-    /* =====================================================
-       FILE INPUT
-       ===================================================== */
+        const tabs = document.getElementById("mml-tabs");
+        const title = document.getElementById("mml-sheet-title");
+        const pagination = document.getElementById("mml-pagination");
 
-    fileInput.addEventListener(
-        "change",
-        function () {
+        if (tabs) tabs.remove();
+        if (title) title.remove();
+        if (pagination) pagination.remove();
+    });
 
-            updateFileName();
-        }
-    );
-
-
-    /* =====================================================
-       EXPORT BUTTON
-       
-       Compatible dengan:
-       #xlsx-btn
-       atau HTML lama:
-       #csv-btn
-       ===================================================== */
-
-    let exportButton =
-        document.getElementById(
-            "xlsx-btn"
-        );
-
-
-    if (!exportButton) {
-
-        exportButton =
-            document.getElementById(
-                "csv-btn"
-            );
-    }
-
-
-    if (exportButton) {
-
-        exportButton.textContent =
-            "Download XLSX";
-
-
-        exportButton.disabled =
-            true;
-
-
-        exportButton.addEventListener(
-            "click",
-            downloadXLSX
-        );
-    }
-
-
-    /* =====================================================
-       INITIAL STATE
-       ===================================================== */
-
-    if (status) {
-
-        status.textContent =
-            "Ready";
-    }
+    if (status) status.textContent = "Ready";
 
 })();
+'''
+
+path = Path("/mnt/data/mml-parser-tabs-final.js")
+path.write_text(js, encoding="utf-8")
+
+print(f"Created: {path}")
+print(f"Size: {path.stat().st_size / 1024:.1f} KB")
