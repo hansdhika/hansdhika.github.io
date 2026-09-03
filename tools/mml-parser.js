@@ -1,19 +1,10 @@
-from pathlib import Path
-
-js = r'''/* =========================================================
-   MML PARSER WEB - FINAL
-   - Python-compatible parsing
-   - Tab per result sheet
-   - Pagination per tab
-   - XLSX multi-sheet export
-   - SheetJS lazy-load
-   - Anti-copy deterrence
-   ========================================================= */
-
 (function () {
     "use strict";
 
-    /* ---------- Anti-copy deterrence ---------- */
+    /* =========================
+       ANTI COPY DETERRENT
+       ========================= */
+
     document.addEventListener("contextmenu", e => e.preventDefault());
 
     document.addEventListener("dragstart", e => {
@@ -33,7 +24,6 @@ js = r'''/* =========================================================
         if ((e.ctrlKey || e.metaKey) &&
             ["c", "x", "s", "u", "p"].includes(k)) {
             e.preventDefault();
-            return;
         }
 
         if ((e.ctrlKey || e.metaKey) && e.shiftKey &&
@@ -42,130 +32,17 @@ js = r'''/* =========================================================
         }
     });
 
-    const style = document.createElement("style");
-    style.textContent = `
-        body { user-select:none; -webkit-user-select:none; }
-        input, textarea, select { user-select:text; -webkit-user-select:text; }
-        img { -webkit-user-drag:none; }
 
-        #mml-tabs {
-            display:flex;
-            flex-wrap:wrap;
-            gap:6px;
-            margin:16px 0 12px;
-            border-bottom:1px solid #ddd;
-            padding-bottom:8px;
-        }
+    /* =========================
+       ELEMENTS
+       ========================= */
 
-        .mml-tab {
-            border:1px solid #d9dfe8;
-            background:#fff;
-            border-radius:7px;
-            padding:8px 12px;
-            cursor:pointer;
-            font-weight:600;
-        }
-
-        .mml-tab.active {
-            background:#1667d9;
-            color:#fff;
-            border-color:#1667d9;
-        }
-
-        .mml-tab-count {
-            font-weight:400;
-            opacity:.8;
-            margin-left:4px;
-        }
-
-        #mml-sheet-title {
-            font-weight:700;
-            margin:8px 0;
-        }
-
-        #mml-pagination {
-            margin:14px 0;
-        }
-
-        .mml-pagination-top {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:12px;
-            margin-bottom:10px;
-            font-size:14px;
-        }
-
-        .mml-rows-control {
-            display:flex;
-            align-items:center;
-            gap:7px;
-        }
-
-        #mml-rows-select {
-            padding:5px 8px;
-            border:1px solid #d9dfe8;
-            border-radius:6px;
-            background:#fff;
-        }
-
-        .mml-pagination-bottom {
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            gap:5px;
-            flex-wrap:wrap;
-        }
-
-        #mml-page-buttons {
-            display:flex;
-            gap:5px;
-            flex-wrap:wrap;
-            justify-content:center;
-        }
-
-        .mml-page-btn {
-            min-width:34px;
-            height:34px;
-            padding:0 9px;
-            border:1px solid #d9dfe8;
-            border-radius:6px;
-            background:#fff;
-            cursor:pointer;
-        }
-
-        .mml-page-btn.active {
-            background:#1667d9;
-            color:#fff;
-            border-color:#1667d9;
-            font-weight:700;
-        }
-
-        .mml-page-btn:disabled {
-            opacity:.5;
-            cursor:not-allowed;
-        }
-
-        .mml-page-dots {
-            padding:7px 3px;
-        }
-
-        @media (max-width:600px) {
-            .mml-pagination-top {
-                flex-direction:column;
-                align-items:flex-start;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    /* ---------- Elements ---------- */
     const fileInput = document.getElementById("mml-file");
     const parseBtn = document.getElementById("parse-btn");
     const resetBtn = document.getElementById("reset-btn");
     const status = document.getElementById("mml-status");
     const table = document.getElementById("result-table");
-    const tbody = table ? table.querySelector("tbody") : null;
+    const tbody = table.querySelector("tbody");
     const fileName = document.getElementById("file-name");
 
     const exportBtn =
@@ -177,15 +54,20 @@ js = r'''/* =========================================================
         exportBtn.disabled = true;
     }
 
-    /* ---------- State ---------- */
+
+    /* =========================
+       STATE
+       ========================= */
+
     let tables = {};
     let errors = [];
     let noMatch = [];
     let opSuccess = [];
 
     let activeSheet = "FAILED";
-    let rowsPerPage = 25;
     let currentPage = 1;
+    let rowsPerPage = 25;
+
 
     const failedPatterns = [
         "Failure",
@@ -198,12 +80,144 @@ js = r'''/* =========================================================
         "Permission denied"
     ];
 
-    function text(v) {
-        return v === undefined || v === null ? "" : String(v);
+
+    /* =========================
+       STYLE
+       ========================= */
+
+    const css = document.createElement("style");
+
+    css.textContent = `
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea, select {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        #mml-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 16px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .mml-tab {
+            padding: 8px 12px;
+            border: 1px solid #d9dfe8;
+            border-radius: 7px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .mml-tab.active {
+            background: #1667d9;
+            color: #fff;
+            border-color: #1667d9;
+        }
+
+        .mml-tab-count {
+            margin-left: 4px;
+            opacity: .8;
+            font-weight: 400;
+        }
+
+        #mml-sheet-title {
+            margin: 8px 0;
+            font-weight: 700;
+        }
+
+        #mml-pagination {
+            margin: 14px 0;
+        }
+
+        .mml-pagination-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .mml-rows-control {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        #mml-rows-select {
+            padding: 5px 8px;
+            border: 1px solid #d9dfe8;
+            border-radius: 6px;
+        }
+
+        .mml-pagination-bottom {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        #mml-page-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .mml-page-btn {
+            min-width: 34px;
+            height: 34px;
+            padding: 0 9px;
+            border: 1px solid #d9dfe8;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .mml-page-btn.active {
+            background: #1667d9;
+            color: #fff;
+            border-color: #1667d9;
+        }
+
+        .mml-page-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .mml-page-dots {
+            padding: 7px 3px;
+        }
+
+        @media (max-width: 600px) {
+            .mml-pagination-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    `;
+
+    document.head.appendChild(css);
+
+
+    /* =========================
+       HELPERS
+       ========================= */
+
+    function txt(v) {
+        return v == null ? "" : String(v);
     }
 
-    function escapeHTML(v) {
-        return text(v)
+
+    function esc(v) {
+        return txt(v)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -211,17 +225,29 @@ js = r'''/* =========================================================
             .replace(/'/g, "&#039;");
     }
 
-    function makeTableName(command) {
-        return command.replace(/[^\w]+/g, "_").substring(0, 31);
+
+    function tableName(command) {
+        return command
+            .replace(/[^\w]+/g, "_")
+            .substring(0, 31);
     }
 
+
     function addHeaders(t, row) {
-        Object.keys(row).forEach(k => {
-            if (!t.header.includes(k)) t.header.push(k);
+        Object.keys(row).forEach(key => {
+            if (!t.header.includes(key)) {
+                t.header.push(key);
+            }
         });
     }
 
+
+    /* =========================
+       PARSER
+       ========================= */
+
     function parseMML(sourceText) {
+
         const lines = sourceText.split(/\r?\n/);
 
         tables = {};
@@ -231,17 +257,32 @@ js = r'''/* =========================================================
 
         let neName = "";
         let command = "";
+
         let i = 0;
 
         while (i < lines.length) {
+
             const line = lines[i].trim();
 
+
             /* NE NAME */
+
             if (line.includes("+++")) {
-                const m = line.match(/\+{3}\s+(.+?)\s+\d{4}-\d{2}-\d{2}/);
-                if (m) neName = m[1].trim();
+
+                const m = line.match(
+                    /\+{3}\s+(.+?)\s+\d{4}-\d{2}-\d{2}/
+                );
+
+                if (m) {
+                    neName = m[1].trim();
+                }
+
             } else if (line.startsWith("NE :")) {
-                neName = line.replace("NE :", "").trim();
+
+                neName = line
+                    .replace("NE :", "")
+                    .trim();
+
             } else if (
                 line.includes("#") &&
                 !line.includes("+++") &&
@@ -249,41 +290,73 @@ js = r'''/* =========================================================
                 !line.startsWith("O&M") &&
                 !line.startsWith("---")
             ) {
+
                 neName = line.trim();
             }
 
-            /* COMMAND */
-            const commandMatch =
-                line.match(/(MOD|ADD|RMV|SET|LST|DSP)\s+([A-Z0-9_]+)/);
 
-            if (commandMatch) {
-                command = `${commandMatch[1]} ${commandMatch[2]}`;
+            /* COMMAND */
+
+            const cm = line.match(
+                /(MOD|ADD|RMV|SET|LST|DSP)\s+([A-Z0-9_]+)/
+            );
+
+            if (cm) {
+                command = `${cm[1]} ${cm[2]}`;
             }
 
+
             /* FAILED */
+
             for (const pattern of failedPatterns) {
+
                 if (line.includes(pattern)) {
-                    errors.push([neName, command, line]);
+
+                    errors.push([
+                        neName,
+                        command,
+                        line
+                    ]);
+
                     break;
                 }
             }
 
+
             /* NO MATCH */
+
             if (line.includes("No matching result")) {
-                noMatch.push([neName, command, line]);
+
+                noMatch.push([
+                    neName,
+                    command,
+                    line
+                ]);
             }
+
 
             /* SUCCESS */
+
             if (line.includes("Operation succeeded")) {
-                opSuccess.push([neName, command, line]);
+
+                opSuccess.push([
+                    neName,
+                    command,
+                    line
+                ]);
             }
 
+
             /* RESULT BLOCK */
+
             if (line.startsWith("------------")) {
+
                 i++;
+
                 const block = [];
 
                 while (i < lines.length) {
+
                     const row = lines[i].trim();
 
                     if (
@@ -293,93 +366,133 @@ js = r'''/* =========================================================
                         break;
                     }
 
-                    if (row !== "") block.push(row);
+                    if (row !== "") {
+                        block.push(row);
+                    }
+
                     i++;
                 }
 
-                if (block.length > 0) {
-                    const tableName = makeTableName(command);
 
-                    if (!tables[tableName]) {
-                        tables[tableName] = {
-                            header: ["NE_NAME", "MML Command"],
+                if (block.length) {
+
+                    const name = tableName(command);
+
+                    if (!tables[name]) {
+
+                        tables[name] = {
+                            header: [
+                                "NE_NAME",
+                                "MML Command"
+                            ],
                             rows: []
                         };
                     }
 
-                    const t = tables[tableName];
+                    const t = tables[name];
+
 
                     /* KEY = VALUE */
+
                     if (block[0].includes("=")) {
-                        const rowDict = {
+
+                        const row = {
                             NE_NAME: neName,
                             "MML Command": command
                         };
 
-                        for (const r of block) {
-                            const m = r.match(/^(.+?)\s*=\s*(.+)$/);
+                        for (const line2 of block) {
+
+                            const m = line2.match(
+                                /^(.+?)\s*=\s*(.+)$/
+                            );
+
                             if (!m) continue;
 
-                            const k = m[1].trim();
-                            const v = m[2].trim();
+                            const key = m[1].trim();
+                            const value = m[2].trim();
 
-                            if (v.includes("&") && v.includes(":")) {
-                                for (const sub of v.split("&")) {
-                                    if (!sub.includes(":")) continue;
+                            if (
+                                value.includes("&") &&
+                                value.includes(":")
+                            ) {
+
+                                value.split("&").forEach(sub => {
+
+                                    if (!sub.includes(":")) return;
 
                                     const p = sub.indexOf(":");
-                                    const sk = sub.substring(0, p).trim();
-                                    const sv = sub.substring(p + 1).trim();
 
-                                    rowDict[sk] = sv;
-                                }
+                                    row[
+                                        sub.substring(0, p).trim()
+                                    ] =
+                                        sub.substring(p + 1).trim();
+                                });
+
                             } else {
-                                rowDict[k] = v;
+
+                                row[key] = value;
                             }
                         }
 
-                        addHeaders(t, rowDict);
-                        t.rows.push(rowDict);
+                        addHeaders(t, row);
+                        t.rows.push(row);
                     }
 
+
                     /* NORMAL TABLE */
+
                     else {
-                        const headerLine = block[0].split(/\s{2,}/);
+
+                        const header =
+                            block[0].split(/\s{2,}/);
 
                         for (let r = 1; r < block.length; r++) {
-                            const cols = block[r].split(/\s{2,}/);
 
-                            const rowDict = {
+                            const cols =
+                                block[r].split(/\s{2,}/);
+
+                            const row = {
                                 NE_NAME: neName,
                                 "MML Command": command
                             };
 
-                            const count = Math.min(
-                                headerLine.length,
-                                cols.length
-                            );
+                            const count =
+                                Math.min(
+                                    header.length,
+                                    cols.length
+                                );
 
                             for (let c = 0; c < count; c++) {
-                                const h = headerLine[c];
-                                const v = cols[c];
 
-                                if (v.includes("&") && v.includes(":")) {
-                                    for (const sub of v.split("&")) {
-                                        if (!sub.includes(":")) continue;
+                                const key = header[c];
+                                const value = cols[c];
+
+                                if (
+                                    value.includes("&") &&
+                                    value.includes(":")
+                                ) {
+
+                                    value.split("&").forEach(sub => {
+
+                                        if (!sub.includes(":")) return;
 
                                         const p = sub.indexOf(":");
-                                        const sk = sub.substring(0, p).trim();
-                                        const sv = sub.substring(p + 1).trim();
 
-                                        rowDict[sk] = sv;
-                                    }
+                                        row[
+                                            sub.substring(0, p).trim()
+                                        ] =
+                                            sub.substring(p + 1).trim();
+                                    });
+
                                 } else {
-                                    rowDict[h] = v;
+
+                                    row[key] = value;
                                 }
                             }
 
-                            addHeaders(t, rowDict);
-                            t.rows.push(rowDict);
+                            addHeaders(t, row);
+                            t.rows.push(row);
                         }
                     }
                 }
@@ -389,9 +502,34 @@ js = r'''/* =========================================================
         }
     }
 
-    /* ---------- Sheet helpers ---------- */
-    function getSheetRows(name) {
+
+    /* =========================
+       SHEET DATA
+       ========================= */
+
+    function sheetNames() {
+
+        const result = [
+            "FAILED",
+            "NO_MATCH",
+            "LOG_SUCCESS"
+        ];
+
+        Object.keys(tables).forEach(name => {
+
+            if (!result.includes(name)) {
+                result.push(name);
+            }
+        });
+
+        return result;
+    }
+
+
+    function sheetRows(name) {
+
         if (name === "FAILED") {
+
             return errors.map(r => ({
                 NE_NAME: r[0],
                 "MML Command": r[1],
@@ -400,6 +538,7 @@ js = r'''/* =========================================================
         }
 
         if (name === "NO_MATCH") {
+
             return noMatch.map(r => ({
                 NE_NAME: r[0],
                 "MML Command": r[1],
@@ -408,6 +547,7 @@ js = r'''/* =========================================================
         }
 
         if (name === "LOG_SUCCESS") {
+
             return opSuccess.map(r => ({
                 NE_NAME: r[0],
                 "MML Command": r[1],
@@ -415,33 +555,38 @@ js = r'''/* =========================================================
             }));
         }
 
-        return tables[name] ? tables[name].rows : [];
+        return tables[name]
+            ? tables[name].rows
+            : [];
     }
 
-    function getSheetHeader(name) {
+
+    function sheetHeader(name) {
+
         if (
             name === "FAILED" ||
             name === "NO_MATCH" ||
             name === "LOG_SUCCESS"
         ) {
-            return ["NE_NAME", "MML Command", "Message"];
+
+            return [
+                "NE_NAME",
+                "MML Command",
+                "Message"
+            ];
         }
 
-        return tables[name] ? tables[name].header : [];
+        return tables[name]
+            ? tables[name].header
+            : [];
     }
-
-    function getSheetNames() {
-        const names = ["FAILED", "NO_MATCH", "LOG_SUCCESS"];
-
-        Object.keys(tables).forEach(name => {
-            if (!names.includes(name)) names.push(name);
-        });
-
-        return names;
-    }
+       /* =========================
+       OBJECT PREVIEW
+       ========================= */
 
     function getObject(row) {
-        const keys = [
+
+        const preferred = [
             "NR Cell ID",
             "NR DU Cell TRP ID",
             "NR DU Cell ID",
@@ -451,67 +596,101 @@ js = r'''/* =========================================================
             "Object Name"
         ];
 
-        for (const k of keys) {
-            if (row[k] !== undefined && row[k] !== "") return row[k];
-        }
-
-        for (const k of Object.keys(row)) {
-            const u = k.toUpperCase();
+        for (const key of preferred) {
 
             if (
-                (u.includes("OBJ") ||
-                 u.includes("CELL") ||
-                 u.includes("TRP")) &&
-                row[k] !== undefined &&
-                row[k] !== ""
+                row[key] !== undefined &&
+                row[key] !== ""
             ) {
-                return row[k];
+                return row[key];
+            }
+        }
+
+        for (const key of Object.keys(row)) {
+
+            const u = key.toUpperCase();
+
+            if (
+                (
+                    u.includes("OBJ") ||
+                    u.includes("CELL") ||
+                    u.includes("TRP")
+                ) &&
+                row[key] !== undefined &&
+                row[key] !== ""
+            ) {
+                return row[key];
             }
         }
 
         return "";
     }
 
+
     function getRaw(row) {
-        return row.Message !== undefined ? row.Message : "";
+
+        return row.Message !== undefined
+            ? row.Message
+            : "";
     }
 
-    /* ---------- Build tab UI ---------- */
-    function createSheetUI() {
-        let tabs = document.getElementById("mml-tabs");
+
+    /* =========================
+       TABS
+       ========================= */
+
+    function createTabs() {
+
+        let tabs =
+            document.getElementById("mml-tabs");
 
         if (!tabs) {
+
             tabs = document.createElement("div");
             tabs.id = "mml-tabs";
 
-            if (table && table.parentNode) {
-                table.parentNode.insertBefore(tabs, table);
-            }
+            table.parentNode.insertBefore(
+                tabs,
+                table
+            );
         }
 
-        let title = document.getElementById("mml-sheet-title");
+        let title =
+            document.getElementById(
+                "mml-sheet-title"
+            );
 
         if (!title) {
+
             title = document.createElement("div");
             title.id = "mml-sheet-title";
 
-            if (table && table.parentNode) {
-                table.parentNode.insertBefore(title, table);
-            }
+            table.parentNode.insertBefore(
+                title,
+                table
+            );
         }
 
         tabs.innerHTML = "";
 
-        getSheetNames().forEach(name => {
-            const btn = document.createElement("button");
+        sheetNames().forEach(name => {
+
+            const btn =
+                document.createElement("button");
+
             btn.type = "button";
             btn.className = "mml-tab";
+
             btn.textContent = name;
 
-            const count = document.createElement("span");
-            count.className = "mml-tab-count";
+            const count =
+                document.createElement("span");
+
+            count.className =
+                "mml-tab-count";
+
             count.textContent =
-                `(${getSheetRows(name).length.toLocaleString()})`;
+                `(${sheetRows(name).length.toLocaleString()})`;
 
             btn.appendChild(count);
 
@@ -519,297 +698,502 @@ js = r'''/* =========================================================
                 btn.classList.add("active");
             }
 
-            btn.addEventListener("click", () => {
+            btn.onclick = () => {
+
                 activeSheet = name;
                 currentPage = 1;
-                createSheetUI();
+
+                createTabs();
                 renderPage();
-            });
+            };
 
             tabs.appendChild(btn);
         });
 
         title.textContent =
-            `${activeSheet} — ${getSheetRows(activeSheet).length.toLocaleString()} rows`;
+            `${activeSheet} — ` +
+            `${sheetRows(activeSheet).length.toLocaleString()} rows`;
     }
 
-    /* ---------- Pagination ---------- */
+
+    /* =========================
+       PAGINATION
+       ========================= */
+
     function createPagination() {
-        let p = document.getElementById("mml-pagination");
-        if (p) return p;
 
-        p = document.createElement("div");
-        p.id = "mml-pagination";
+        if (
+            document.getElementById(
+                "mml-pagination"
+            )
+        ) {
+            return;
+        }
 
-        p.innerHTML = `
+        const box =
+            document.createElement("div");
+
+        box.id = "mml-pagination";
+
+        box.innerHTML = `
             <div class="mml-pagination-top">
-                <div id="mml-page-info">No data</div>
+
+                <div id="mml-page-info">
+                    No data
+                </div>
+
                 <div class="mml-rows-control">
-                    <label for="mml-rows-select">Rows:</label>
+
+                    <label>Rows:</label>
+
                     <select id="mml-rows-select">
                         <option value="10">10</option>
                         <option value="25" selected>25</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
                     </select>
+
                 </div>
+
             </div>
 
             <div class="mml-pagination-bottom">
-                <button type="button" id="mml-prev-btn"
-                        class="mml-page-btn">Previous</button>
+
+                <button
+                    id="mml-prev-btn"
+                    class="mml-page-btn"
+                    type="button"
+                >
+                    Previous
+                </button>
+
                 <div id="mml-page-buttons"></div>
-                <button type="button" id="mml-next-btn"
-                        class="mml-page-btn">Next</button>
+
+                <button
+                    id="mml-next-btn"
+                    class="mml-page-btn"
+                    type="button"
+                >
+                    Next
+                </button>
+
             </div>
         `;
 
-        if (exportBtn && exportBtn.parentNode) {
-            exportBtn.parentNode.insertBefore(p, exportBtn);
-        } else if (table && table.parentNode) {
-            table.parentNode.appendChild(p);
+        if (
+            exportBtn &&
+            exportBtn.parentNode
+        ) {
+
+            exportBtn.parentNode.insertBefore(
+                box,
+                exportBtn
+            );
+
+        } else {
+
+            table.parentNode.appendChild(box);
         }
 
-        document.getElementById("mml-rows-select")
-            .addEventListener("change", e => {
-                rowsPerPage = parseInt(e.target.value, 10);
+
+        document
+            .getElementById("mml-rows-select")
+            .onchange = e => {
+
+                rowsPerPage =
+                    Number(e.target.value);
+
                 currentPage = 1;
+
                 renderPage();
-            });
+            };
 
-        document.getElementById("mml-prev-btn")
-            .addEventListener("click", () => {
+
+        document
+            .getElementById("mml-prev-btn")
+            .onclick = () => {
+
                 if (currentPage > 1) {
+
                     currentPage--;
+
                     renderPage();
                 }
-            });
+            };
 
-        document.getElementById("mml-next-btn")
-            .addEventListener("click", () => {
-                const totalPages = Math.max(
-                    1,
-                    Math.ceil(
-                        getSheetRows(activeSheet).length /
-                        rowsPerPage
-                    )
-                );
 
-                if (currentPage < totalPages) {
+        document
+            .getElementById("mml-next-btn")
+            .onclick = () => {
+
+                const totalPages =
+                    Math.max(
+                        1,
+                        Math.ceil(
+                            sheetRows(activeSheet).length /
+                            rowsPerPage
+                        )
+                    );
+
+                if (
+                    currentPage <
+                    totalPages
+                ) {
+
                     currentPage++;
+
                     renderPage();
                 }
-            });
-
-        return p;
+            };
     }
 
-    function pageNumbers(current, total) {
+
+    function pageList(current, total) {
+
         if (total <= 7) {
-            return Array.from({length: total}, (_, i) => i + 1);
+
+            return Array.from(
+                {length: total},
+                (_, i) => i + 1
+            );
         }
 
-        const out = [1];
+        const result = [1];
 
-        if (current > 4) out.push("...");
+        if (current > 4) {
+            result.push("...");
+        }
 
         for (
             let i = Math.max(2, current - 1);
             i <= Math.min(total - 1, current + 1);
             i++
         ) {
-            out.push(i);
+            result.push(i);
         }
 
-        if (current < total - 3) out.push("...");
+        if (current < total - 3) {
+            result.push("...");
+        }
 
-        out.push(total);
-        return out;
+        result.push(total);
+
+        return result;
     }
 
+
     function renderPage() {
-        if (!tbody) return;
 
-        const rows = getSheetRows(activeSheet);
-        const total = rows.length;
-        const totalPages = Math.max(
-            1,
-            Math.ceil(total / rowsPerPage)
-        );
+        const rows =
+            sheetRows(activeSheet);
 
-        if (currentPage > totalPages) currentPage = totalPages;
+        const total =
+            rows.length;
 
-        const start = total === 0
-            ? 0
-            : (currentPage - 1) * rowsPerPage;
+        const totalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    total /
+                    rowsPerPage
+                )
+            );
 
-        const end = Math.min(
-            start + rowsPerPage,
-            total
-        );
+        if (
+            currentPage > totalPages
+        ) {
+            currentPage = totalPages;
+        }
+
+        const start =
+            (currentPage - 1) *
+            rowsPerPage;
+
+        const end =
+            Math.min(
+                start + rowsPerPage,
+                total
+            );
+
 
         tbody.innerHTML = "";
 
-        rows.slice(start, end).forEach((row, idx) => {
-            const tr = document.createElement("tr");
 
-            tr.innerHTML = `
-                <td>${escapeHTML(start + idx + 1)}</td>
-                <td>${escapeHTML(row.NE_NAME)}</td>
-                <td>${escapeHTML(row["MML Command"])}</td>
-                <td>${escapeHTML(getObject(row))}</td>
-                <td>${escapeHTML(getRaw(row))}</td>
-            `;
+        rows
+            .slice(start, end)
+            .forEach((row, index) => {
 
-            tbody.appendChild(tr);
-        });
+                const tr =
+                    document.createElement("tr");
 
-        createPagination();
+                tr.innerHTML = `
+                    <td>${esc(start + index + 1)}</td>
+                    <td>${esc(row.NE_NAME)}</td>
+                    <td>${esc(row["MML Command"])}</td>
+                    <td>${esc(getObject(row))}</td>
+                    <td>${esc(getRaw(row))}</td>
+                `;
 
-        const info = document.getElementById("mml-page-info");
+                tbody.appendChild(tr);
+            });
+
+
+        const info =
+            document.getElementById(
+                "mml-page-info"
+            );
+
         if (info) {
-            info.textContent = total === 0
-                ? "No data"
-                : `Showing ${start + 1}-${end} of ${total.toLocaleString()}`;
+
+            info.textContent =
+                total === 0
+                    ? "No data"
+                    : `Showing ${start + 1}-${end} of ${total.toLocaleString()}`;
         }
 
-        const buttons = document.getElementById("mml-page-buttons");
+
+        const buttons =
+            document.getElementById(
+                "mml-page-buttons"
+            );
+
         if (buttons) {
+
             buttons.innerHTML = "";
 
-            pageNumbers(currentPage, totalPages).forEach(page => {
+            pageList(
+                currentPage,
+                totalPages
+            ).forEach(page => {
+
                 if (page === "...") {
-                    const dots = document.createElement("span");
-                    dots.className = "mml-page-dots";
+
+                    const dots =
+                        document.createElement("span");
+
+                    dots.className =
+                        "mml-page-dots";
+
                     dots.textContent = "...";
+
                     buttons.appendChild(dots);
+
                     return;
                 }
 
-                const btn = document.createElement("button");
+                const btn =
+                    document.createElement("button");
+
                 btn.type = "button";
                 btn.className = "mml-page-btn";
                 btn.textContent = page;
 
-                if (page === currentPage) {
+                if (
+                    page === currentPage
+                ) {
                     btn.classList.add("active");
                 }
 
-                btn.addEventListener("click", () => {
+                btn.onclick = () => {
+
                     currentPage = page;
+
                     renderPage();
-                });
+                };
 
                 buttons.appendChild(btn);
             });
         }
 
-        const prev = document.getElementById("mml-prev-btn");
-        const next = document.getElementById("mml-next-btn");
 
-        if (prev) prev.disabled = currentPage <= 1;
-        if (next) next.disabled = currentPage >= totalPages;
-    }
+        const prev =
+            document.getElementById(
+                "mml-prev-btn"
+            );
 
-    /* ---------- Status ---------- */
-    function updateStatus() {
-        let dataRows = 0;
+        const next =
+            document.getElementById(
+                "mml-next-btn"
+            );
 
-        Object.values(tables).forEach(t => {
-            dataRows += t.rows.length;
-        });
+        if (prev) {
+            prev.disabled =
+                currentPage <= 1;
+        }
 
-        if (status) {
-            status.textContent =
-                `Parsed ${(errors.length + noMatch.length +
-                opSuccess.length + dataRows).toLocaleString()} rows` +
-                ` | FAILED: ${errors.length.toLocaleString()}` +
-                ` | NO_MATCH: ${noMatch.length.toLocaleString()}` +
-                ` | SUCCESS: ${opSuccess.length.toLocaleString()}` +
-                ` | DATA: ${dataRows.toLocaleString()}`;
+        if (next) {
+            next.disabled =
+                currentPage >= totalPages;
         }
     }
 
-    /* ---------- SheetJS ---------- */
+
+    /* =========================
+       STATUS
+       ========================= */
+
+    function updateStatus() {
+
+        let data = 0;
+
+        Object.values(tables)
+            .forEach(t => {
+                data += t.rows.length;
+            });
+
+        const total =
+            errors.length +
+            noMatch.length +
+            opSuccess.length +
+            data;
+
+        status.textContent =
+            `Parsed ${total.toLocaleString()} rows` +
+            ` | FAILED: ${errors.length.toLocaleString()}` +
+            ` | NO_MATCH: ${noMatch.length.toLocaleString()}` +
+            ` | SUCCESS: ${opSuccess.length.toLocaleString()}` +
+            ` | DATA: ${data.toLocaleString()}`;
+    }
+
+
+    /* =========================
+       SHEETJS
+       ========================= */
+
     function loadXLSX() {
-        if (window.XLSX) return Promise.resolve();
+
+        if (window.XLSX) {
+            return Promise.resolve();
+        }
 
         return new Promise((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src =
+
+            const script =
+                document.createElement("script");
+
+            script.src =
                 "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
 
-            s.onload = resolve;
-            s.onerror = () =>
-                reject(new Error("Failed to load SheetJS"));
+            script.onload = resolve;
 
-            document.head.appendChild(s);
+            script.onerror = reject;
+
+            document.head.appendChild(script);
         });
     }
 
-    function makeAOA(name) {
-        const header = getSheetHeader(name);
-        const rows = getSheetRows(name);
 
-        return [
-            header,
-            ...rows.map(row =>
-                header.map(key =>
-                    row[key] === undefined ? "" : row[key]
-                )
-            )
-        ];
-    }
-
-    function prepareWorksheet(ws) {
-        if (!ws["!ref"]) return;
-
-        ws["!freeze"] = {xSplit: 0, ySplit: 1};
-        ws["!autofilter"] = {ref: ws["!ref"]};
-
-        const range = XLSX.utils.decode_range(ws["!ref"]);
-        const widths = [];
-
-        for (let c = range.s.c; c <= range.e.c; c++) {
-            let max = 10;
-
-            for (let r = range.s.r; r <= range.e.r; r++) {
-                const cell = ws[
-                    XLSX.utils.encode_cell({r, c})
-                ];
-
-                if (
-                    cell &&
-                    cell.v !== undefined &&
-                    cell.v !== null
-                ) {
-                    max = Math.max(
-                        max,
-                        String(cell.v).length
-                    );
-                }
-            }
-
-            widths.push({
-                wch: Math.min(max + 2, 50)
-            });
-        }
-
-        ws["!cols"] = widths;
-    }
+    /* =========================
+       XLSX EXPORT
+       ========================= */
 
     async function downloadXLSX() {
+
         try {
+
             await loadXLSX();
 
-            const wb = XLSX.utils.book_new();
+            const wb =
+                XLSX.utils.book_new();
 
-            getSheetNames().forEach(name => {
-                const ws = XLSX.utils.aoa_to_sheet(
-                    makeAOA(name)
-                );
 
-                prepareWorksheet(ws);
+            sheetNames().forEach(name => {
+
+                const header =
+                    sheetHeader(name);
+
+                const rows =
+                    sheetRows(name);
+
+                const data = [
+                    header,
+                    ...rows.map(row =>
+                        header.map(key =>
+                            row[key] === undefined
+                                ? ""
+                                : row[key]
+                        )
+                    )
+                ];
+
+                const ws =
+                    XLSX.utils.aoa_to_sheet(data);
+
+
+                /* Freeze header */
+
+                ws["!freeze"] = {
+                    xSplit: 0,
+                    ySplit: 1
+                };
+
+
+                /* Autofilter */
+
+                if (ws["!ref"]) {
+                    ws["!autofilter"] = {
+                        ref: ws["!ref"]
+                    };
+                }
+
+
+                /* Column width */
+
+                const range =
+                    XLSX.utils.decode_range(
+                        ws["!ref"]
+                    );
+
+                const widths = [];
+
+                for (
+                    let c = range.s.c;
+                    c <= range.e.c;
+                    c++
+                ) {
+
+                    let max = 10;
+
+                    for (
+                        let r = range.s.r;
+                        r <= range.e.r;
+                        r++
+                    ) {
+
+                        const cell =
+                            ws[
+                                XLSX.utils.encode_cell({
+                                    r,
+                                    c
+                                })
+                            ];
+
+                        if (
+                            cell &&
+                            cell.v != null
+                        ) {
+
+                            max =
+                                Math.max(
+                                    max,
+                                    String(
+                                        cell.v
+                                    ).length
+                                );
+                        }
+                    }
+
+                    widths.push({
+                        wch:
+                            Math.min(
+                                max + 2,
+                                50
+                            )
+                    });
+                }
+
+                ws["!cols"] = widths;
+
 
                 XLSX.utils.book_append_sheet(
                     wb,
@@ -818,20 +1202,29 @@ js = r'''/* =========================================================
                 );
             });
 
-            let outputName = "MML_Task_Result_parsed.xlsx";
 
-            if (fileInput && fileInput.files.length) {
+            let outputName =
+                "MML_Task_Result_parsed.xlsx";
+
+            if (
+                fileInput &&
+                fileInput.files.length
+            ) {
+
                 outputName =
                     fileInput.files[0].name
-                        .replace(/\.[^/.]+$/, "") +
+                        .replace(
+                            /\.[^/.]+$/,
+                            ""
+                        ) +
                     "_parsed.xlsx";
             }
 
+
             /*
-             * compression:true is important.
-             * Browser XLSX can otherwise become much larger
-             * than the Python/openpyxl result.
+             * Compression aktif
              */
+
             XLSX.writeFile(
                 wb,
                 outputName,
@@ -840,101 +1233,179 @@ js = r'''/* =========================================================
                 }
             );
 
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+
+            console.error(error);
+
             alert(
-                "Failed to create XLSX. Please check your connection and try again."
+                "Failed to create XLSX."
             );
         }
     }
 
-    /* ---------- Parse ---------- */
-    parseBtn.addEventListener("click", () => {
-        if (!fileInput || !fileInput.files.length) {
-            alert("Please select an MML file first.");
-            return;
-        }
 
-        const reader = new FileReader();
+    /* =========================
+       PARSE BUTTON
+       ========================= */
 
-        reader.onload = e => {
-            try {
-                parseMML(e.target.result);
+    parseBtn.addEventListener(
+        "click",
+        () => {
 
-                activeSheet = "FAILED";
-                currentPage = 1;
-                rowsPerPage = 25;
+            if (
+                !fileInput.files.length
+            ) {
 
-                createSheetUI();
-                createPagination();
-                renderPage();
-                updateStatus();
+                alert(
+                    "Please select an MML file first."
+                );
 
-                if (exportBtn) {
-                    exportBtn.disabled = false;
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Failed to parse MML file.");
+                return;
             }
-        };
 
-        reader.onerror = () => {
-            alert("Failed to read the selected file.");
-        };
 
-        reader.readAsText(fileInput.files[0]);
-    });
+            const reader =
+                new FileReader();
 
-    /* ---------- File name ---------- */
-    if (fileInput) {
-        fileInput.addEventListener("change", () => {
+
+            reader.onload = e => {
+
+                try {
+
+                    parseMML(
+                        e.target.result
+                    );
+
+
+                    activeSheet = "FAILED";
+                    currentPage = 1;
+                    rowsPerPage = 25;
+
+
+                    createTabs();
+                    createPagination();
+                    renderPage();
+                    updateStatus();
+
+
+                    if (exportBtn) {
+                        exportBtn.disabled = false;
+                    }
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        "Failed to parse MML file."
+                    );
+                }
+            };
+
+
+            reader.onerror = () => {
+
+                alert(
+                    "Failed to read the selected file."
+                );
+            };
+
+
+            reader.readAsText(
+                fileInput.files[0]
+            );
+        }
+    );
+
+
+    /* =========================
+       FILE NAME
+       ========================= */
+
+    fileInput.addEventListener(
+        "change",
+        () => {
+
             if (fileName) {
+
                 fileName.textContent =
                     fileInput.files.length
                         ? fileInput.files[0].name
                         : "Choose MML TXT or LOG file";
             }
-        });
+        }
+    );
+
+
+    /* =========================
+       EXPORT BUTTON
+       ========================= */
+
+    if (exportBtn) {
+
+        exportBtn.addEventListener(
+            "click",
+            downloadXLSX
+        );
     }
 
-    /* ---------- Reset ---------- */
-    resetBtn.addEventListener("click", () => {
-        tables = {};
-        errors = [];
-        noMatch = [];
-        opSuccess = [];
 
-        activeSheet = "FAILED";
-        currentPage = 1;
+    /* =========================
+       RESET
+       ========================= */
 
-        if (tbody) tbody.innerHTML = "";
-        if (fileInput) fileInput.value = "";
+    resetBtn.addEventListener(
+        "click",
+        () => {
 
-        if (fileName) {
-            fileName.textContent =
-                "Choose MML TXT or LOG file";
+            tables = {};
+            errors = [];
+            noMatch = [];
+            opSuccess = [];
+
+            activeSheet = "FAILED";
+            currentPage = 1;
+
+
+            tbody.innerHTML = "";
+
+
+            if (status) {
+                status.textContent = "Ready";
+            }
+
+
+            if (fileInput) {
+                fileInput.value = "";
+            }
+
+
+            if (fileName) {
+                fileName.textContent =
+                    "Choose MML TXT or LOG file";
+            }
+
+
+            if (exportBtn) {
+                exportBtn.disabled = true;
+            }
+
+
+            [
+                "mml-tabs",
+                "mml-sheet-title",
+                "mml-pagination"
+            ].forEach(id => {
+
+                const el =
+                    document.getElementById(id);
+
+                if (el) el.remove();
+            });
         }
+    );
 
-        if (status) status.textContent = "Ready";
-        if (exportBtn) exportBtn.disabled = true;
 
-        const tabs = document.getElementById("mml-tabs");
-        const title = document.getElementById("mml-sheet-title");
-        const pagination = document.getElementById("mml-pagination");
-
-        if (tabs) tabs.remove();
-        if (title) title.remove();
-        if (pagination) pagination.remove();
-    });
-
-    if (status) status.textContent = "Ready";
+    status.textContent = "Ready";
 
 })();
-'''
-
-path = Path("/mnt/data/mml-parser-tabs-final.js")
-path.write_text(js, encoding="utf-8")
-
-print(f"Created: {path}")
-print(f"Size: {path.stat().st_size / 1024:.1f} KB")
