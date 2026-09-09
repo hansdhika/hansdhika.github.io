@@ -192,3 +192,71 @@ footer { text-align:center; color:#8a93a3; font-size:12px; margin-top:24px; }
 
 /* V3.5 CACHE / VISIBILITY FIX */
 .command-results:not(.show) { display: none !important; }
+
+
+/* V3.6 Global Tool Navigation */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(245,247,251,.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e0e5ee;
+}
+
+.nav-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.nav-brand {
+  color: #172033;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.nav-links a {
+  color: #566174;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 8px;
+}
+
+.nav-links a:hover {
+  background: #e9edf4;
+  color: #172033;
+}
+
+.nav-links a.active {
+  background: #172033;
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .nav-inner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-links {
+    justify-content: flex-start;
+  }
+}
