@@ -1,63 +1,80 @@
 {
   "id": "MOD_EUTRANINTRAFREQNCELL",
   "name": "MOD EUTRANINTRAFREQNCELL",
-  "description": "Modify Intra-Frequency Neighboring Relation with E-UTRAN Cell",
-  "template": "MOD EUTRANINTRAFREQNCELL: LocalCellId={LocalCellId}, Mcc=\"{Mcc}\", Mnc=\"{Mnc}\", eNodeBId={eNodeBId}, CellId={CellId}, CellIndividualOffset={CellIndividualOffset}, CellQoffset={CellQoffset}, NoHoFlag={NoHoFlag}, NoRmvFlag={NoRmvFlag};",
+  "description": "Modify an intra-frequency E-UTRAN neighboring cell relation. NE Name is optional and is automatically wrapped in braces.",
+  "template": "MOD EUTRANINTRAFREQNCELL:{params};{Remark}",
   "fields": [
     {
       "id": "LocalCellId",
-      "label": "Local Cell ID",
+      "label": "LocalCellId",
       "type": "number",
       "min": 0,
       "max": 255,
-      "default": ""
+      "default": "",
+      "required": false,
+      "output": "LocalCellId={value}"
     },
     {
       "id": "Mcc",
-      "label": "MCC",
+      "label": "Mcc",
       "type": "text",
-      "pattern": "^[0-9]{3}$",
+      "pattern": "^\\d{3}$",
       "default": "",
-      "hint": "3 digits"
+      "required": false,
+      "output": "Mcc=\"{value}\""
     },
     {
       "id": "Mnc",
-      "label": "MNC",
+      "label": "Mnc",
       "type": "text",
-      "pattern": "^[0-9]{2,3}$",
+      "pattern": "^\\d{2,3}$",
       "default": "",
-      "hint": "2–3 digits"
+      "required": false,
+      "output": "Mnc=\"{value}\""
     },
     {
       "id": "eNodeBId",
-      "label": "eNodeB ID",
+      "label": "eNodeBId",
       "type": "number",
       "min": 0,
       "max": 1048575,
-      "default": ""
+      "default": "",
+      "required": false,
+      "output": "eNodeBId={value}"
     },
     {
       "id": "CellId",
-      "label": "Cell ID",
+      "label": "CellId",
       "type": "number",
       "min": 0,
       "max": 255,
-      "default": ""
+      "default": "",
+      "required": false,
+      "output": "CellId={value}"
     },
     {
       "id": "CellIndividualOffset",
-      "label": "Cell Individual Offset",
+      "label": "CellIndividualOffset",
       "type": "select",
       "options": [
         "dB-24",
+        "dB-23",
         "dB-22",
+        "dB-21",
         "dB-20",
+        "dB-19",
         "dB-18",
+        "dB-17",
         "dB-16",
+        "dB-15",
         "dB-14",
+        "dB-13",
         "dB-12",
+        "dB-11",
         "dB-10",
+        "dB-9",
         "dB-8",
+        "dB-7",
         "dB-6",
         "dB-5",
         "dB-4",
@@ -71,32 +88,52 @@
         "dB4",
         "dB5",
         "dB6",
+        "dB7",
         "dB8",
+        "dB9",
         "dB10",
+        "dB11",
         "dB12",
+        "dB13",
         "dB14",
+        "dB15",
         "dB16",
+        "dB17",
         "dB18",
+        "dB19",
         "dB20",
+        "dB21",
         "dB22",
+        "dB23",
         "dB24"
       ],
-      "default": ""
+      "default": "",
+      "required": false,
+      "output": "CellIndividualOffset={value}"
     },
     {
       "id": "CellQoffset",
-      "label": "Cell Qoffset",
+      "label": "CellQoffset",
       "type": "select",
       "options": [
         "dB-24",
+        "dB-23",
         "dB-22",
+        "dB-21",
         "dB-20",
+        "dB-19",
         "dB-18",
+        "dB-17",
         "dB-16",
+        "dB-15",
         "dB-14",
+        "dB-13",
         "dB-12",
+        "dB-11",
         "dB-10",
+        "dB-9",
         "dB-8",
+        "dB-7",
         "dB-6",
         "dB-5",
         "dB-4",
@@ -110,37 +147,29 @@
         "dB4",
         "dB5",
         "dB6",
+        "dB7",
         "dB8",
+        "dB9",
         "dB10",
+        "dB11",
         "dB12",
+        "dB13",
         "dB14",
+        "dB15",
         "dB16",
+        "dB17",
         "dB18",
+        "dB19",
         "dB20",
+        "dB21",
         "dB22",
+        "dB23",
         "dB24"
       ],
-      "default": ""
-    },
-    {
-      "id": "NoHoFlag",
-      "label": "No Handover Flag",
-      "type": "select",
-      "options": [
-        "PERMIT_HO_ENUM",
-        "FORBID_HO_ENUM"
-      ],
-      "default": ""
-    },
-    {
-      "id": "NoRmvFlag",
-      "label": "No Remove Flag",
-      "type": "select",
-      "options": [
-        "PERMIT_RMV_ENUM",
-        "FORBID_RMV_ENUM"
-      ],
-      "default": ""
+      "default": "",
+      "required": false,
+      "output": "CellQoffset={value}"
     }
-  ]
+  ],
+  "all_fields_optional": true
 }
