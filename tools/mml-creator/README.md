@@ -7,6 +7,7 @@ Web-based Huawei MML command generator for GitHub Pages.
 Currently supports:
 
 - `MOD EUTRANINTRAFREQNCELL`
+- `MOD CELLMLB`
 - Parameter validation
 - MML generation
 - Copy to clipboard
