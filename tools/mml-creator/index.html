@@ -3,30 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Huawei MML Script Creator</title>
-  <link rel="stylesheet" href="style.css?v=36">
+  <title>MML Creator | Hans Dhika</title>
+  <link rel="stylesheet" href="../../style.css?v=1">
 </head>
 <body>
-  <nav class="top-nav">
-    <div class="nav-inner">
-      <a class="nav-brand" href="../../">Hans Dhika</a>
-      <div class="nav-links">
-        <a href="../">Tools</a>
-        <a href="../mml-parser/">MML Parser</a>
-        <a class="active" href="./">MML Creator</a>
-      </div>
-    </div>
-  </nav>
 
-  <main class="container section">
+<header>
+  <div class="container nav">
+    <a class="logo" href="../../">HD.</a>
+
+    <button class="menu" id="menu">☰</button>
+
+    <nav id="nav">
+      <a class="" href="../../">Home</a>
+      <a class="active" href="../">Tools</a>
+      <a class="" href="../../projects/">Projects</a>
+      <a class="" href="../../about/">About</a>
+      <a class="" href="../../contact/">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container section">
   <div class="section-title">
-    <p class="label">MML CREATOR</p>
+    <p class="label">TOOLS / MML CREATOR</p>
     <h1>MML Script Composer.</h1>
     <p class="muted">Search a Huawei command, build one command at a time, add it to the script, then copy or save the complete script.</p>
   </div>
 
-  <section class="card">
-    <label for="commandSearch">Command</label>
+  <div class="tool-box">
+    <div class="tool-tabs">
+      <a class="active" href="./">MML Creator</a>
+      <a href="../">All Tools</a>
+      <a href="../mml-parser/">MML Parser</a>
+    </div>
+
+    <div class="tool-panel">
+      <label for="commandSearch">Command</label>
     <div class="command-search">
       <input id="commandSearch" type="search" autocomplete="off" placeholder="Search command... e.g. MOD E">
       <div id="commandResults" class="command-results"></div>
