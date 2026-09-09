@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huawei MML Script Creator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div>
+        <p class="eyebrow">HUAWEI MML TOOLKIT</p>
+        <h1>MML Script Creator</h1>
+        <p class="subtitle">Generate validated Huawei MML commands from a simple form.</p>
+      </div>
+      <span class="badge">V1</span>
+    </header>
+
+    <section class="card">
+      <label for="command">Command</label>
+      <select id="command">
+        <option value="MOD_EUTRANINTRAFREQNCELL">MOD EUTRANINTRAFREQNCELL</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2>Parameters</h2>
+      <div id="form"></div>
+      <div id="errors" class="errors"></div>
+
+      <div class="actions">
+        <button id="generate">Generate</button>
+        <button id="copy" class="secondary">Copy</button>
+        <button id="save" class="secondary">Save TXT</button>
+        <button id="reset" class="ghost">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="result-head">
+        <h2>Generated MML</h2>
+        <span id="status" class="status">Ready</span>
+      </div>
+      <pre id="output">Click Generate to create the MML command.</pre>
+    </section>
+
+    <footer>Huawei MML Script Creator • GitHub Pages</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
