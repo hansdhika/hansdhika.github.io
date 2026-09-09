@@ -7,46 +7,67 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <header>
+  <main class="container section">
+  <div class="section-title">
+    <p class="label">MML CREATOR</p>
+    <h1>MML Script Composer.</h1>
+    <p class="muted">Search a Huawei command, build one command at a time, add it to the script, then copy or save the complete script.</p>
+  </div>
+
+  <section class="card">
+    <label for="commandSearch">Command</label>
+    <div class="command-search">
+      <input id="commandSearch" type="search" autocomplete="off" placeholder="Search command... e.g. MOD E">
+      <div id="commandResults" class="command-results"></div>
+    </div>
+    <div id="selectedCommand" class="selected-command">No command selected</div>
+  </section>
+
+  <section class="card">
+    <div class="section-heading">
       <div>
-        <p class="eyebrow">HUAWEI MML TOOLKIT</p>
-        <h1>MML Script Creator</h1>
-        <p class="subtitle">Generate validated Huawei MML commands from a simple form.</p>
+        <h2>Command Builder</h2>
+        <p id="commandDescription" class="muted">Select a command to load its parameters.</p>
       </div>
-      <span class="badge">V1</span>
-    </header>
+    </div>
+    <form id="form"></form>
 
-    <section class="card">
-      <label for="command">Command</label>
-      <select id="command">
-        <option value="MOD_EUTRANINTRAFREQNCELL">MOD EUTRANINTRAFREQNCELL</option>
-      </select>
-    </section>
+    <div class="field remark-field">
+      <label for="remark">Remark / Context <span class="muted">(optional)</span></label>
+      <input id="remark" type="text" placeholder='Example: {SITE#CELL#TYPE}'>
+    </div>
 
-    <section class="card">
-      <h2>Parameters</h2>
-      <div id="form"></div>
-      <div id="errors" class="errors"></div>
+    <div class="actions">
+      <button id="generate" type="button">Generate</button>
+      <button id="addToScript" type="button">+ Add to Script</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+    <div id="errors" class="errors"></div>
+    <div id="status" class="status">Ready</div>
+  </section>
 
-      <div class="actions">
-        <button id="generate">Generate</button>
-        <button id="copy" class="secondary">Copy</button>
-        <button id="save" class="secondary">Save TXT</button>
-        <button id="reset" class="ghost">Reset</button>
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <h2>Script Queue</h2>
+        <p class="muted"><span id="scriptCount">0</span> command(s)</p>
       </div>
-    </section>
+      <button id="clearScript" type="button">Clear Script</button>
+    </div>
+    <div id="scriptList" class="script-list">
+      <div class="script-empty">No commands added yet.</div>
+    </div>
+  </section>
 
-    <section class="card">
-      <div class="result-head">
-        <h2>Generated MML</h2>
-        <span id="status" class="status">Ready</span>
-      </div>
-      <pre id="output">Click Generate to create the MML command.</pre>
-    </section>
-
-    <footer>Huawei MML Script Creator • GitHub Pages</footer>
-  </main>
+  <section class="card">
+    <label for="output">Current Command</label>
+    <pre id="output" class="output">Select a command and fill the parameters.</pre>
+    <div class="actions">
+      <button id="copy" type="button">Copy to Clipboard</button>
+      <button id="save" type="button">Save TXT</button>
+    </div>
+  </section>
+</main>
   <script src="app.js"></script>
 </body>
 </html>
