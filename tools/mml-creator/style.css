@@ -1,0 +1,50 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, Segoe UI, Arial, sans-serif;
+  background: #f5f7fb;
+  color: #172033;
+}
+.container { max-width: 980px; margin: 0 auto; padding: 40px 20px 60px; }
+header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 24px;
+}
+.eyebrow { margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; font-weight: 700; }
+h1 { margin: 0; font-size: 32px; }
+.subtitle { color: #687386; margin: 8px 0 0; }
+.badge {
+  border: 1px solid #d8deea; background: white; border-radius: 999px;
+  padding: 7px 12px; font-weight: 700; font-size: 12px;
+}
+.card {
+  background: white; border: 1px solid #e0e5ee; border-radius: 14px;
+  padding: 22px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(30,45,70,.04);
+}
+h2 { margin: 0 0 18px; font-size: 18px; }
+label { display:block; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
+.grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; }
+.field input, .field select, #command {
+  width:100%; padding:11px 12px; border:1px solid #ccd4e1; border-radius:9px;
+  background:#fff; color:#172033; font-size:14px;
+}
+.field small { display:block; margin-top:5px; color:#7b8596; font-size:11px; }
+.actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+button {
+  border:0; border-radius:9px; padding:11px 17px; font-weight:700; cursor:pointer;
+}
+button:not(.secondary):not(.ghost) { background:#172033; color:white; }
+button.secondary { background:#e9edf4; color:#172033; }
+button.ghost { background:transparent; border:1px solid #d5dbe6; color:#566174; }
+.errors { color:#b42318; margin-top:14px; font-size:13px; }
+.result-head { display:flex; justify-content:space-between; align-items:center; }
+.status { font-size:12px; padding:5px 9px; border-radius:999px; background:#edf1f6; color:#657083; }
+pre {
+  white-space:pre-wrap; word-break:break-word; background:#101722; color:#e9eef7;
+  padding:18px; border-radius:10px; min-height:90px; line-height:1.55;
+}
+footer { text-align:center; color:#8a93a3; font-size:12px; margin-top:24px; }
+@media(max-width:700px) {
+  .grid { grid-template-columns:1fr; }
+  h1 { font-size:26px; }
+}
