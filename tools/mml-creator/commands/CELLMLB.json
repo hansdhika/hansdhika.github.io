@@ -1,0 +1,1068 @@
+{
+  "id": "MOD_CELLMLB",
+  "name": "MOD CELLMLB",
+  "description": "Modify the configuration of the cell MLB algorithm. Network elements: BTS3900, BTS3900 LTE, BTS5900, BTS5900 LTE.",
+  "template": "MOD CELLMLB:{params};{Remark}",
+  "fields": [
+    {
+      "id": "LocalCellId",
+      "label": "LocalCellId",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "LocalCellId={value}",
+      "min": 0,
+      "max": 255,
+      "hint": "Recommended: None"
+    },
+    {
+      "id": "InterFreqMlbThd",
+      "label": "InterFreqMlbThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqMlbThd={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 40"
+    },
+    {
+      "id": "InterRatMlbThd",
+      "label": "InterRatMlbThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbThd={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 75"
+    },
+    {
+      "id": "LoadOffset",
+      "label": "LoadOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "LoadOffset={value}",
+      "min": 0,
+      "max": 50,
+      "hint": "Recommended: 8"
+    },
+    {
+      "id": "LoadDiffThd",
+      "label": "LoadDiffThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "LoadDiffThd={value}",
+      "min": 1,
+      "max": 50,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "InterRatMlbUeNumThd",
+      "label": "InterRatMlbUeNumThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbUeNumThd={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "InitValidPeriod",
+      "label": "InitValidPeriod",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InitValidPeriod={value}",
+      "min": 1,
+      "max": 30,
+      "hint": "Recommended: 10"
+    },
+    {
+      "id": "LoadTransferFactor",
+      "label": "LoadTransferFactor",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "LoadTransferFactor={value}",
+      "min": 0,
+      "max": 1000,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "MlbTriggerMode",
+      "label": "MlbTriggerMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "MlbTriggerMode={value}",
+      "options": [
+        "PRB_ONLY",
+        "UE_NUMBER_ONLY",
+        "PRB_OR_UE_NUMBER"
+      ],
+      "hint": "Recommended: PRB_OR_UE_NUMBER(PrbOrUeNumMode)"
+    },
+    {
+      "id": "InterFreqMlbUeNumThd",
+      "label": "InterFreqMlbUeNumThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqMlbUeNumThd={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 100"
+    },
+    {
+      "id": "MlbUeNumOffset",
+      "label": "MlbUeNumOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbUeNumOffset={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "MlbMaxUeNum",
+      "label": "MlbMaxUeNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbMaxUeNum={value}",
+      "min": 1,
+      "max": 80,
+      "hint": "Recommended: 40"
+    },
+    {
+      "id": "MlbUeSelectPrbThd",
+      "label": "MlbUeSelectPrbThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbUeSelectPrbThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "DlDataMlbMode",
+      "label": "DlDataMlbMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "DlDataMlbMode={value}",
+      "options": [
+        "NON_TRIGGERED",
+        "UENUMBASED"
+      ],
+      "hint": "See Huawei recommendation in source."
+    },
+    {
+      "id": "InterFreqMLBRanShareMode",
+      "label": "InterFreqMLBRanShareMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterFreqMLBRanShareMode={value}",
+      "options": [
+        "NON_SHARING",
+        "SHARING",
+        "OVERSHARING",
+        "GROUPSHARING",
+        "GROUPOVERSHARING"
+      ],
+      "hint": "Recommended: NON_SHARING(NON_SHARING)"
+    },
+    {
+      "id": "UeNumDiffThd",
+      "label": "UeNumDiffThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UeNumDiffThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "HotSpotUeMode",
+      "label": "HotSpotUeMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "HotSpotUeMode={value}",
+      "options": [
+        "OFF",
+        "ON"
+      ],
+      "hint": "Recommended: OFF(Off)"
+    },
+    {
+      "id": "InterFreqIdleMlbMode",
+      "label": "InterFreqIdleMlbMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterFreqIdleMlbMode={value}",
+      "options": [
+        "Proportion",
+        "eMtcProportion"
+      ],
+      "hint": "Recommended: Proportion\\:Off, eMtcProportion\\:Off"
+    },
+    {
+      "id": "MlbMinUeNumThd",
+      "label": "MlbMinUeNumThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbMinUeNumThd={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: see Huawei deployment/upgrade recommendation in source."
+    },
+    {
+      "id": "MlbMinUeNumOffset",
+      "label": "MlbMinUeNumOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbMinUeNumOffset={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: see Huawei deployment/upgrade recommendation in source."
+    },
+    {
+      "id": "InterFreqUeTrsfType",
+      "label": "InterFreqUeTrsfType",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterFreqUeTrsfType={value}",
+      "options": [
+        "SynchronizedUE",
+        "IdleUE",
+        "PrbMlbSynchronizedUE",
+        "PrbMlbIdleUE"
+      ],
+      "hint": "Recommended: SynchronizedUE\\:On, IdleUE\\:On, PrbMlbSynchronizedUE\\:On, PrbMlbIdleUE\\:Off"
+    },
+    {
+      "id": "InterFreqIdleMlbUeNumThd",
+      "label": "InterFreqIdleMlbUeNumThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqIdleMlbUeNumThd={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 100"
+    },
+    {
+      "id": "InterRatIdleMlbUeNumThd",
+      "label": "InterRatIdleMlbUeNumThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatIdleMlbUeNumThd={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 150"
+    },
+    {
+      "id": "InterFreqLoadEvalPrd",
+      "label": "InterFreqLoadEvalPrd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqLoadEvalPrd={value}",
+      "min": 5,
+      "max": 30,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "InterRatLoadEvalPrd",
+      "label": "InterRatLoadEvalPrd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatLoadEvalPrd={value}",
+      "min": 5,
+      "max": 30,
+      "hint": "Recommended: 30"
+    },
+    {
+      "id": "FreqSelectStrategy",
+      "label": "FreqSelectStrategy",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "FreqSelectStrategy={value}",
+      "options": [
+        "FAIRSTRATEGY",
+        "PRIORITYBASED",
+        "LOADPRIORITY",
+        "EE_PRIORITY"
+      ],
+      "hint": "Recommended: FAIRSTRATEGY(FairStrategy)"
+    },
+    {
+      "id": "LoadBalanceNCellScope",
+      "label": "LoadBalanceNCellScope",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "LoadBalanceNCellScope={value}",
+      "options": [
+        "ADAPTIVE",
+        "ALL"
+      ],
+      "hint": "Recommended: ADAPTIVE(Adaptive)"
+    },
+    {
+      "id": "InterRatMlbUeNumOffset",
+      "label": "InterRatMlbUeNumOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbUeNumOffset={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: 20"
+    },
+    {
+      "id": "IdleUeSelFreqScope",
+      "label": "IdleUeSelFreqScope",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "IdleUeSelFreqScope={value}",
+      "options": [
+        "LOADINFOFREQ",
+        "ALLFREQ",
+        "ALLFREQWITHOUTPUNISH"
+      ],
+      "hint": "Recommended: LOADINFOFREQ(LOADINFOFREQ)"
+    },
+    {
+      "id": "InterRatMlbUeSelStrategy",
+      "label": "InterRatMlbUeSelStrategy",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbUeSelStrategy={value}",
+      "options": [
+        "PRBRATIOHIGHMODE",
+        "PRBRATIOLOWMODE"
+      ],
+      "hint": "Recommended: PRBRATIOHIGHMODE(PRBRATIOHIGHMODE)"
+    },
+    {
+      "id": "InterRatMlbUeSelPrbThd",
+      "label": "InterRatMlbUeSelPrbThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbUeSelPrbThd={value}",
+      "min": 0,
+      "max": 50,
+      "hint": "Recommended: 2"
+    },
+    {
+      "id": "PrbLoadCalcMethod",
+      "label": "PrbLoadCalcMethod",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "PrbLoadCalcMethod={value}",
+      "options": [
+        "PRB_USAGE",
+        "PRB_VALUATION_WITH_CTRL",
+        "PRB_VALUATION_NO_CTRL"
+      ],
+      "hint": "Recommended: PRB_USAGE(Prb Usage)"
+    },
+    {
+      "id": "MlbUeSelectPunishTimer",
+      "label": "MlbUeSelectPunishTimer",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbUeSelectPunishTimer={value}",
+      "min": 0,
+      "max": 3600,
+      "hint": "Recommended: 120"
+    },
+    {
+      "id": "MlbHoCellSelectStrategy",
+      "label": "MlbHoCellSelectStrategy",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "MlbHoCellSelectStrategy={value}",
+      "options": [
+        "ONLY_STRONGEST_CELL",
+        "PERMIT_NON_STRONGEST_CELL"
+      ],
+      "hint": "Recommended: ONLY_STRONGEST_CELL(Only Try Strongest Cell)"
+    },
+    {
+      "id": "InterRatMlbTriggerMode",
+      "label": "InterRatMlbTriggerMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbTriggerMode={value}",
+      "options": [
+        "IRAT_PRB_ONLY",
+        "IRAT_UE_NUMBER_ONLY",
+        "IRAT_PRB_OR_UE_NUMBER"
+      ],
+      "hint": "Recommended: IRAT_PRB_ONLY(PRB Usage)"
+    },
+    {
+      "id": "InterRatMlbUeNumModeThd",
+      "label": "InterRatMlbUeNumModeThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbUeNumModeThd={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 150"
+    },
+    {
+      "id": "PunishJudgePrdNum",
+      "label": "PunishJudgePrdNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "PunishJudgePrdNum={value}",
+      "min": 1,
+      "max": 127,
+      "hint": "Recommended: 1"
+    },
+    {
+      "id": "FreqPunishPrdNum",
+      "label": "FreqPunishPrdNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "FreqPunishPrdNum={value}",
+      "min": 0,
+      "max": 127,
+      "hint": "Recommended: 4"
+    },
+    {
+      "id": "CellPunishPrdNum",
+      "label": "CellPunishPrdNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "CellPunishPrdNum={value}",
+      "min": 0,
+      "max": 127,
+      "hint": "Recommended: 4"
+    },
+    {
+      "id": "MultiRruMode",
+      "label": "MultiRruMode",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "MultiRruMode={value}",
+      "options": [
+        "PrbUsage"
+      ],
+      "hint": "Recommended: PrbUsage: Off"
+    },
+    {
+      "id": "InterFreqOffloadOffset",
+      "label": "InterFreqOffloadOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqOffloadOffset={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: None"
+    },
+    {
+      "id": "InterFrqUeNumOffloadOffset",
+      "label": "InterFrqUeNumOffloadOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFrqUeNumOffloadOffset={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: None"
+    },
+    {
+      "id": "CellCapacityScaleFactor",
+      "label": "CellCapacityScaleFactor",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "CellCapacityScaleFactor={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: None"
+    },
+    {
+      "id": "InterRatMlbMaxUeNum",
+      "label": "InterRatMlbMaxUeNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbMaxUeNum={value}",
+      "min": 1,
+      "max": 20,
+      "hint": "Recommended: 3"
+    },
+    {
+      "id": "InterRatMlbHoFailPunish",
+      "label": "InterRatMlbHoFailPunish",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "InterRatMlbHoFailPunish={value}",
+      "options": [
+        "NO",
+        "YES"
+      ],
+      "hint": "Recommended: YES(YES). It is recommended that this parameter be set to YES(YES) when inter-RAT MLB is enabled."
+    },
+    {
+      "id": "EutranLoadJudgeStrategy",
+      "label": "EutranLoadJudgeStrategy",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "EutranLoadJudgeStrategy={value}",
+      "options": [
+        "INTERRATMLBUENUMTHD",
+        "L2UMLBTRIGGERSTATUS"
+      ],
+      "hint": "Recommended: L2UMLBTRIGGERSTATUS(L2UMLBTRIGGERSTATUS)"
+    },
+    {
+      "id": "MlbTrigJudgePeriod",
+      "label": "MlbTrigJudgePeriod",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbTrigJudgePeriod={value}",
+      "min": 1,
+      "max": 60,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "MaxSpectralEfficiencyValue",
+      "label": "MaxSpectralEfficiencyValue",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MaxSpectralEfficiencyValue={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 120"
+    },
+    {
+      "id": "MinSpectralEfficiencyValue",
+      "label": "MinSpectralEfficiencyValue",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MinSpectralEfficiencyValue={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 10"
+    },
+    {
+      "id": "SpectralEffAdjustMaxStep",
+      "label": "SpectralEffAdjustMaxStep",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "SpectralEffAdjustMaxStep={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 2"
+    },
+    {
+      "id": "UeNumDiffOffsetTransCa",
+      "label": "UeNumDiffOffsetTransCa",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UeNumDiffOffsetTransCa={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "MlbIdleUeNumAdjFactor",
+      "label": "MlbIdleUeNumAdjFactor",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MlbIdleUeNumAdjFactor={value}",
+      "min": 0,
+      "max": 50,
+      "hint": "Recommended: 10"
+    },
+    {
+      "id": "IdleMlbUeNumDiffThd",
+      "label": "IdleMlbUeNumDiffThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "IdleMlbUeNumDiffThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "L2USmartOffloadThd",
+      "label": "L2USmartOffloadThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "L2USmartOffloadThd={value}",
+      "min": 1,
+      "max": 1000000,
+      "hint": "Recommended: 2000"
+    },
+    {
+      "id": "L2USmartOffloadOffset",
+      "label": "L2USmartOffloadOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "L2USmartOffloadOffset={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 20"
+    },
+    {
+      "id": "InterFreqMlbUlThd",
+      "label": "InterFreqMlbUlThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqMlbUlThd={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 40"
+    },
+    {
+      "id": "UeDlPrbLowThdOffset",
+      "label": "UeDlPrbLowThdOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UeDlPrbLowThdOffset={value}",
+      "min": -100,
+      "max": 100,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "UeUlPrbHighThdOffset",
+      "label": "UeUlPrbHighThdOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UeUlPrbHighThdOffset={value}",
+      "min": -100,
+      "max": 100,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "UeUlPrbLowThdOffset",
+      "label": "UeUlPrbLowThdOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UeUlPrbLowThdOffset={value}",
+      "min": -100,
+      "max": 100,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "VideoLoadHighThd",
+      "label": "VideoLoadHighThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "VideoLoadHighThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 70"
+    },
+    {
+      "id": "VideoLoadLowThd",
+      "label": "VideoLoadLowThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "VideoLoadLowThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 50"
+    },
+    {
+      "id": "VideoDlPrbThd",
+      "label": "VideoDlPrbThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "VideoDlPrbThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 70"
+    },
+    {
+      "id": "InterFIdleUeNumOffloadOfs",
+      "label": "InterFIdleUeNumOffloadOfs",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFIdleUeNumOffloadOfs={value}",
+      "min": 0,
+      "max": 10000,
+      "hint": "Recommended: 80"
+    },
+    {
+      "id": "UlExperienceDiffThd",
+      "label": "UlExperienceDiffThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UlExperienceDiffThd={value}",
+      "min": 0,
+      "max": 100,
+      "hint": "Recommended: 50"
+    },
+    {
+      "id": "UlExperienceEvalPrd",
+      "label": "UlExperienceEvalPrd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UlExperienceEvalPrd={value}",
+      "min": 5,
+      "max": 30,
+      "hint": "Recommended: 15"
+    },
+    {
+      "id": "UlExperienceMaxUeNum",
+      "label": "UlExperienceMaxUeNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UlExperienceMaxUeNum={value}",
+      "min": 1,
+      "max": 40,
+      "hint": "Recommended: 5"
+    },
+    {
+      "id": "UlExperienceOffloadThd",
+      "label": "UlExperienceOffloadThd",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UlExperienceOffloadThd={value}",
+      "min": 1,
+      "max": 1000000,
+      "hint": "Recommended: 1000"
+    },
+    {
+      "id": "UlExperienceOffset",
+      "label": "UlExperienceOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "UlExperienceOffset={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 20"
+    },
+    {
+      "id": "MmLoadSteeringUeNumThld",
+      "label": "MmLoadSteeringUeNumThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MmLoadSteeringUeNumThld={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 50"
+    },
+    {
+      "id": "MmLoadSteeringLayerThld",
+      "label": "MmLoadSteeringLayerThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MmLoadSteeringLayerThld={value}",
+      "min": 0,
+      "max": 1600,
+      "hint": "Recommended: 100"
+    },
+    {
+      "id": "NCellHoSuccRateThld",
+      "label": "NCellHoSuccRateThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "NCellHoSuccRateThld={value}",
+      "min": 80,
+      "max": 100,
+      "hint": "Recommended: 98"
+    },
+    {
+      "id": "MuMimoPrbStatOptSwitch",
+      "label": "MuMimoPrbStatOptSwitch",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "MuMimoPrbStatOptSwitch={value}",
+      "options": [
+        "OFF",
+        "ON"
+      ],
+      "hint": "Recommended: ON(ON)"
+    },
+    {
+      "id": "MmLoadSteeringAdmThld",
+      "label": "MmLoadSteeringAdmThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MmLoadSteeringAdmThld={value}",
+      "min": 1,
+      "max": 65535,
+      "pattern": "^(?:[1-9]\\d{0,3}|10000|65535)$",
+      "hint": "Recommended: 65535"
+    },
+    {
+      "id": "EnhancedMlbAlgoExtSwitch",
+      "label": "EnhancedMlbAlgoExtSwitch",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "EnhancedMlbAlgoExtSwitch={value}",
+      "options": [
+        "UL_EXP_BASED_CA_TFC_STEER_SW",
+        "BLIND_MM_LOAD_STEERING_SW",
+        "GUARANTEED_UE_MLB_SWITCH",
+        "UL_LOW_TRAFFIC_STEER_SW",
+        "MLB_UE_SEL_OPT_SW",
+        "INTER_FREQ_BEAM_MLB_SW",
+        "BEAM_MLB_UE_SEL_OPT_SW",
+        "MLB_UE_IDENTIFICATION_OPT_SW",
+        "MBB_EXP_BASED_STEERING_SW",
+        "INTER_RAT_VOLTE_OFFLOAD_SW",
+        "NSA_DC_CAP_UE_HO_POLICY_SW",
+        "NSA_CAPABLE_UE_HO_POLICY_SW"
+      ],
+      "hint": "Recommended: UL_EXP_BASED_CA_TFC_STEER_SW\\:Off, BLIND_MM_LOAD_STEERING_SW\\:Off, GUARANTEED_UE_MLB_SWITCH\\:Off, UL_LOW_TRAFFIC_STEER_SW\\:Off, MLB_UE_SEL_OPT_SW\\:Off, INTER_FREQ_BEAM_MLB_SW\\:Off, BEAM_MLB_UE_SEL_OPT_SW\\:Off, MLB_UE_IDENTIFICATION_OPT_SW\\:On, MBB_EXP_BASED_STEERING_SW\\:Off, INTER_RAT_VOLTE_OFFLOAD_SW\\:Off, NSA_DC_CAP_UE_HO_POLICY_SW\\:Off, NSA_CAPABLE_UE_HO_POLICY_SW\\:Off"
+    },
+    {
+      "id": "NCellVendorSelectionRange",
+      "label": "NCellVendorSelectionRange",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "NCellVendorSelectionRange={value}",
+      "options": [
+        "INTER_VENDOR_NCELL",
+        "INTRA_VENDOR_NCELL",
+        "ANY_VENDOR_NCELL"
+      ],
+      "hint": "Recommended: INTER_VENDOR_NCELL(INTER_VENDOR_NCELL)"
+    },
+    {
+      "id": "LoadDiffThldOffset",
+      "label": "LoadDiffThldOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "LoadDiffThldOffset={value}",
+      "min": 0,
+      "max": 40,
+      "hint": "Recommended: None"
+    },
+    {
+      "id": "GuaranteedUeMlbUeNumOfs",
+      "label": "GuaranteedUeMlbUeNumOfs",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "GuaranteedUeMlbUeNumOfs={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 50"
+    },
+    {
+      "id": "GuaranteedUeMlbUeNumThld",
+      "label": "GuaranteedUeMlbUeNumThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "GuaranteedUeMlbUeNumThld={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 300"
+    },
+    {
+      "id": "NbMlbUeSelectionRsrpThld",
+      "label": "NbMlbUeSelectionRsrpThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "NbMlbUeSelectionRsrpThld={value}",
+      "min": -141,
+      "max": 0,
+      "pattern": "^(?:-141|-[1-9]\\d?|-[1][0-3]\\d|-[4-9]\\d|0)$",
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "HeavyLoadBeamUeNumThld",
+      "label": "HeavyLoadBeamUeNumThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "HeavyLoadBeamUeNumThld={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 30"
+    },
+    {
+      "id": "InterFreqBeamMlbUeNumThld",
+      "label": "InterFreqBeamMlbUeNumThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterFreqBeamMlbUeNumThld={value}",
+      "min": 1,
+      "max": 10000,
+      "hint": "Recommended: 80"
+    },
+    {
+      "id": "MbbUlAvgPerceivedRateThld",
+      "label": "MbbUlAvgPerceivedRateThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MbbUlAvgPerceivedRateThld={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "MbbDlAvgPerceivedRateThld",
+      "label": "MbbDlAvgPerceivedRateThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MbbDlAvgPerceivedRateThld={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "WbbUlAvgPerceivedRateThld",
+      "label": "WbbUlAvgPerceivedRateThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "WbbUlAvgPerceivedRateThld={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "WbbDlAvgPerceivedRateThld",
+      "label": "WbbDlAvgPerceivedRateThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "WbbDlAvgPerceivedRateThld={value}",
+      "min": 0,
+      "max": 65535,
+      "hint": "Recommended: 0"
+    },
+    {
+      "id": "MbbPerceivedRateOffset",
+      "label": "MbbPerceivedRateOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "MbbPerceivedRateOffset={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 20"
+    },
+    {
+      "id": "WbbPerceivedRateOffset",
+      "label": "WbbPerceivedRateOffset",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "WbbPerceivedRateOffset={value}",
+      "min": 1,
+      "max": 100,
+      "hint": "Recommended: 20"
+    },
+    {
+      "id": "NbMlbUeSelectionDlMcsThld",
+      "label": "NbMlbUeSelectionDlMcsThld",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "NbMlbUeSelectionDlMcsThld={value}",
+      "min": -9,
+      "max": 255,
+      "pattern": "^(?:-9|-?[0-8]|[0-9]|1[0-9]|22|255)$",
+      "hint": "Recommended: 255"
+    },
+    {
+      "id": "InterRatVolteOffldMaxUeNum",
+      "label": "InterRatVolteOffldMaxUeNum",
+      "type": "number",
+      "default": "",
+      "required": false,
+      "output": "InterRatVolteOffldMaxUeNum={value}",
+      "min": 1,
+      "max": 3,
+      "hint": "Recommended: 2"
+    },
+    {
+      "id": "MlbSonLogRecordInterval",
+      "label": "MlbSonLogRecordInterval",
+      "type": "select",
+      "default": "",
+      "required": false,
+      "output": "MlbSonLogRecordInterval={value}",
+      "options": [
+        "INFINITY",
+        "MIN5",
+        "MIN10",
+        "MIN15",
+        "MIN20",
+        "MIN25",
+        "MIN30"
+      ],
+      "hint": "Recommended: MIN5(MIN5)"
+    }
+  ],
+  "all_fields_optional": true
+}
