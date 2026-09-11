@@ -1,0 +1,8 @@
+/* Shared Hans Dhika site header — keep this file as the header source for tools. */
+.site-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{width:min(1120px,92vw);height:68px;margin:auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.06em}
+.navlinks{display:flex;gap:28px;align-items:center;font-size:13px;color:#555}
+.navlinks a:hover{color:#111}
+.menu{display:none;background:none!important;color:#111!important;width:auto;padding:4px;font-size:22px;border:0}
+@media(max-width:650px){.nav{height:60px}.menu{display:block}.navlinks{display:none;position:absolute;top:60px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);padding:14px 4vw;flex-direction:column;align-items:flex-start;gap:12px}.navlinks.open{display:flex}}
