@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KPI Monitoring</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#fff;--card:#fff;--text:#171717;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#15803d;--bad:#dc2626;--warn:#b45309;--soft:#f7f7f5}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.5}
+a{color:inherit;text-decoration:none}.site-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.nav{width:min(1120px,92vw);height:68px;margin:auto;display:flex;align-items:center;justify-content:space-between}.logo{font-size:22px;font-weight:800;letter-spacing:-.06em}.navlinks{display:flex;gap:28px;align-items:center;font-size:13px;color:#555}.navlinks a:hover{color:#111}.menu{display:none;background:none!important;color:#111!important;width:auto;padding:4px;font-size:22px;border:0}
+.wrap{width:min(1120px,92vw);margin:0 auto;padding:46px 0 70px}.crumb{font-size:12px;color:var(--muted);margin-bottom:18px}.crumb a{text-decoration:underline;text-underline-offset:3px}.hero{padding:4px 0 34px;border-bottom:1px solid var(--line);margin-bottom:28px}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}.hero h1{margin:8px 0 5px;font-size:clamp(30px,5vw,46px);letter-spacing:-.045em;line-height:1.05}.sub{color:var(--muted);font-size:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px}.card h3{font-size:14px;margin:0 0 14px;letter-spacing:-.01em}.template{margin-top:14px;padding:12px 14px;border:1px dashed #cfcfc9;border-radius:9px;background:var(--soft);font-size:12px;color:#555}.template b{color:#222}.template code{font-size:11px;background:#fff;padding:2px 5px;border:1px solid #e7e7e2;border-radius:4px}.template-toggle{cursor:pointer;color:#111;text-decoration:underline;text-underline-offset:2px;font-weight:600}.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}input,select,button{width:100%;padding:9px 10px;border:1px solid #d9dce1;border-radius:7px;background:#fff;color:#222;font:inherit;font-size:12px}input:focus,select:focus{outline:2px solid #e5e7eb;outline-offset:1px}.multi{min-height:92px}.multi option{padding:4px 6px}button{background:#111827;color:#fff;border-color:#111827;font-weight:700;cursor:pointer;letter-spacing:.02em}button:hover{opacity:.9}button.secondary{background:#f3f4f6;color:#111827;border-color:#e5e7eb}.files{font-size:11px;color:var(--muted);margin-top:5px;min-height:16px}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.metric{padding:14px;border:1px solid var(--line);border-radius:10px}.metric b{display:block;font-size:22px;margin-top:4px}.metric span{font-size:11px;color:var(--muted)}.chartbox{height:390px}.metric b.good{color:var(--good)}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#fafafa;position:sticky;top:0;font-size:11px;color:#555}.bad{color:var(--bad);font-weight:700}.good{color:var(--good);font-weight:700}.warn{color:var(--warn);font-weight:700}.scroll{max-height:360px;overflow:auto}.status{font-size:12px;color:var(--muted)}.site-footer{border-top:1px solid var(--line);padding:22px 0;color:var(--muted);font-size:11px}.footer-inner{width:min(1120px,92vw);margin:auto;display:flex;justify-content:space-between;gap:20px}
+@media(max-width:1000px){.grid5,.cards{grid-template-columns:repeat(2,1fr)}.grid4,.two{grid-template-columns:1fr}.navlinks{gap:18px}}
+@media(max-width:650px){.nav{height:60px}.menu{display:block}.navlinks{display:none;position:absolute;top:60px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);padding:14px 4vw;flex-direction:column;align-items:flex-start;gap:12px}.navlinks.open{display:flex}.wrap{width:92vw;padding-top:30px}.grid5,.grid4,.cards{grid-template-columns:1fr}.hero h1{font-size:34px}.chartbox{height:300px}.footer-inner{display:block}.footer-inner span{display:block;margin-top:5px}}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav">
+    <a class="logo" href="https://hansdhika.github.io/">HD.</a>
+    <button class="menu" id="menuBtn" aria-label="Open menu">☰</button>
+    <div class="navlinks" id="navlinks">
+      <a href="https://hansdhika.github.io/">Home</a>
+      <a href="https://hansdhika.github.io/tools/">Tools</a>
+      <a href="https://hansdhika.github.io/#projects">Projects</a>
+      <a href="https://hansdhika.github.io/#about">About</a>
+      <a href="https://hansdhika.github.io/#contact">Contact</a>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="crumb"><a href="https://hansdhika.github.io/tools/">Tools</a> <span>›</span> KPI Monitoring</div>
+  <section class="hero">
+    <div class="eyebrow">02 / TOOL</div>
+    <h1>KPI Monitoring</h1>
+    <div class="sub">Hourly Before / After analysis for 4G &amp; 5G network KPI data.</div>
+    <div class="status" id="status" style="margin-top:8px">Waiting for files</div>
+  </section>
+
+  <div class="card">
+    <h3>Data Source</h3>
+    <div class="grid5">
+      <div><label>4G KPI</label><input id="f4gk" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n4gk">—</div></div>
+      <div><label>5G KPI</label><input id="f5gk" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gk">—</div></div>
+      <div><label>4G PLMN</label><input id="f4gp" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n4gp">—</div></div>
+      <div><label>5G PLMN #1</label><input id="f5gp1" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gp1">—</div></div>
+      <div><label>5G PLMN #2</label><input id="f5gp2" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gp2">—</div></div>
+    </div>
+    <div class="template">
+      <b>FOLLOW THIS TEMPLATE</b> — upload the raw Huawei export without manually changing the columns.
+      The tool detects the header row automatically. Required identity/time fields are detected by name.
+      <span class="template-toggle" onclick="document.getElementById('templateDetail').hidden=!document.getElementById('templateDetail').hidden"> Show expected fields</span>
+      <div id="templateDetail" hidden style="margin-top:8px;line-height:1.7">
+        <b>4G KPI:</b> <code>Date</code> + <code>Time</code> + cell/NE identity + KPI columns.<br>
+        <b>5G KPI:</b> <code>Time</code> + <code>gNodeB Name</code> + <code>Cell Name</code> + KPI columns.<br>
+        <b>4G PLMN:</b> date/time + cell/NE identity + PLMN KPI columns.<br>
+        <b>5G PLMN:</b> #1 and #2 with common keys
+        <code>Time</code>, <code>gNodeB Name</code>, <code>Cell Name</code>, <code>NR Cell ID</code>,
+        <code>gNodeB Function Name</code>, <code>Operator ID</code>, <code>Integrity</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Available Dataset</h3>
+    <div id="datasetStatus" class="grid4"></div>
+    <div class="status" style="margin-top:8px">
+      Dataset yang belum di-upload tidak menghalangi dataset lain. 5G PLMN membutuhkan #1 dan #2.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Analysis</h3>
+    <div class="grid4">
+      <div><label>Dataset</label><select id="dataset"><option value="">Upload a dataset first</option></select></div>
+      <div><label>Before Date</label><input id="before" type="date"></div>
+      <div><label>After Date</label><input id="after" type="date"></div>
+      <div><label>Metric</label><select id="metric"><option value="">Auto detect after upload</option></select></div>
+    </div>
+    <div class="grid4" style="margin-top:10px">
+      <div><label>Start Hour</label><input id="hstart" type="time" value="00:00"></div>
+      <div><label>End Hour</label><input id="hend" type="time" value="23:00"></div>
+      <div><label>Analysis Level</label><select id="level"><option value="SITE">Site</option><option value="BAND">Band</option><option value="CELL">Cell</option></select></div>
+      <div><label>Site</label><select id="siteSelect"><option value="">Select site</option></select></div>
+    </div>
+    <div class="grid4" style="margin-top:10px">
+      <div><label>Search Site</label><input id="siteSearch" placeholder="search site..."></div>
+      <div><label id="scopeLabel">Band / Cell (multi-select)</label><select id="scopeSelect" class="multi" multiple size="4"></select></div>
+      <div><label id="scopeSearchLabel">Search Band / Cell</label><input id="scopeSearch" placeholder="search band / cell..."></div>
+      <div><div class="status" id="scopeInfo" style="margin-top:23px">Select a site to begin.</div></div>
+    </div>
+    <div class="grid4" style="margin-top:10px">
+      <div><label>Aggregation</label><select id="aggregation"><option value="AUTO">Auto / Default</option><option value="SUM">Sum</option><option value="AVERAGE">Average</option><option value="MIN">Min</option><option value="MAX">Max</option><option value="COUNT">Count</option></select></div>
+      <div style="grid-column:span 3"><div class="status" id="aggregationInfo" style="margin-top:23px">Aggregation: —</div></div>
+    </div>
+    <div class="grid4" style="margin-top:10px">
+      <div><label>Trend Level</label><select id="trendLevel"><option value="SITE">Site</option><option value="BAND">Band</option><option value="CELL" selected>Cell</option></select></div>
+      <div style="grid-column:span 3"><div class="status" id="trendInfo" style="margin-top:23px">Trend grouping: Cell</div></div>
+    </div>
+    <div style="margin-top:12px"><button id="analyze">ANALYZE</button></div>
+  </div>
+
+  <div class="cards">
+    <div class="metric"><span>Cells</span><b id="mCells">—</b></div>
+    <div class="metric"><span>Improved</span><b id="mGood">—</b></div>
+    <div class="metric"><span>Stable</span><b id="mStable">—</b></div>
+    <div class="metric"><span>Degraded</span><b id="mBad">—</b></div>
+    <div class="metric"><span>Avg Δ%</span><b id="mDelta">—</b></div>
+  </div>
+
+  <div class="card"><h3>Hourly Trend <span id="trendDates" class="status" style="font-weight:400;margin-left:8px"></span></h3><div class="chartbox"><canvas id="trend"></canvas></div></div>
+
+  <div class="two">
+    <div class="card">
+      <h3>WPC Analyze — Worst Degradation <span class="status">(Cell Level)</span></h3>
+      <div class="wpc-dates"><span>Before: <b id="wpcBeforeDate">—</b></span><span>After: <b id="wpcAfterDate">—</b></span></div>
+      <div class="scroll"><table><thead><tr><th>Rank</th><th>NE Name</th><th>Band</th><th>Cell</th><th id="worstBeforeHead">Before</th><th id="worstAfterHead">After</th><th>Δ%</th></tr></thead><tbody id="worst"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>WPC Analyze — Best Improvement <span class="status">(Cell Level)</span></h3>
+      <div class="wpc-dates"><span>Before: <b id="wpcBeforeDate2">—</b></span><span>After: <b id="wpcAfterDate2">—</b></span></div>
+      <div class="scroll"><table><thead><tr><th>Rank</th><th>NE Name</th><th>Band</th><th>Cell</th><th id="bestBeforeHead">Before</th><th id="bestAfterHead">After</th><th>Δ%</th></tr></thead><tbody id="best"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer"><div class="footer-inner"><span>© Hans Dhika</span><span>Per Aspera Ad Astra.</span></div></footer>
+
+<script>
+document.getElementById('menuBtn')?.addEventListener('click',()=>document.getElementById('navlinks').classList.toggle('open'));
+document.querySelectorAll('#navlinks a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
+const state={data:{}};
+let chart=null;
+
+function clean(x){return String(x??'').trim()}
+function findHeader(rows){
+  for(let i=0;i<Math.min(rows.length,40);i++){
+    const a=rows[i].map(clean);
+    if(a.some(x=>x.toLowerCase()==='time')) return i;
+  }
+  return 0;
+}
+function norm(rows){
+  const h=findHeader(rows), headers=rows[h].map((x,i)=>clean(x)||`Column_${i+1}`);
+  const out=[];
+  for(let r=h+1;r<rows.length;r++){
+    const o={}; let any=false;
+    headers.forEach((k,i)=>{o[k]=rows[r]?.[i]??'';if(clean(rows[r]?.[i]))any=true});
+    if(any)out.push(o);
+  }
+  return {rows:out,headers};
+}
+function parseCSVText(text){
+  const lines=text.split(/\r?\n/);
+  // Simple CSV parser with quoted fields.
+  const rows=lines.map(line=>{
+    const a=[];let cur='',q=false;
+    for(let i=0;i<line.length;i++){const c=line[i];
+      if(c==='"' && line[i+1]==='"'){cur+='"';i++;continue}
+      if(c==='"'){q=!q;continue}
+      if(c===','&&!q){a.push(cur);cur='';}else cur+=c;
+    } a.push(cur);return a;
+  });
+  return norm(rows);
+}
+async function loadFile(file){
+  if(!file)return null;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv')return parseCSVText(await file.text());
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const sheet=wb.Sheets[wb.SheetNames[0]];
+  return norm(XLSX.utils.sheet_to_json(sheet,{header:1,defval:''}));
+}
+function cellCol(headers){
+  return headers.find(c=>/^(cell name|nr cell name|cellname)$/i.test(c)) ||
+         headers.find(c=>/cell name/i.test(c)) ||
+         headers.find(c=>/gNodeB Name/i.test(c)) ||
+         headers.find(c=>/eNodeB Name/i.test(c)) || '';
+}
+function bandFromCell(v){
+  const s=clean(v).toUpperCase();
+  const m=s.match(/(?:^|[^A-Z0-9])(?:4G|5G)(\d{2})(?:[^0-9]|$)/) ||
+          s.match(/(?:4G|5G)(\d{2})/);
+  if(!m)return 'UNKNOWN';
+  const code=m[1];
+  const map={'07':'700','08':'800','09':'900','18':'1800','19':'1900','21':'2100','23':'2300','26':'2600','28':'2800','35':'3500','37':'3700','39':'3900','40':'4000'};
+  return map[code]||code;
+}
+function parseDateValue(v){
+  if(v instanceof Date && !isNaN(v)) return v;
+  const s=clean(v);
+  if(!s) return null;
+  // Excel serial date fallback
+  if(/^\d+(\\.\d+)?$/.test(s)){
+    const n=Number(s);
+    if(n>20000 && n<70000) return new Date(Date.UTC(1899,11,30)+n*86400000);
+  }
+  let d=new Date(s.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, '$3-$2-$1'));
+  if(!isNaN(d)) return d;
+  d=new Date(s);
+  return isNaN(d)?null:d;
+}
+function parseTimeValue(v){
+  if(v instanceof Date && !isNaN(v)) return {h:v.getHours(),m:v.getMinutes(),s:v.getSeconds()};
+  const s=clean(v);
+  if(!s)return null;
+  const m=s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if(!m)return null;
+  let h=Number(m[1]), mi=Number(m[2]), sec=Number(m[3]||0);
+  const ap=(m[4]||'').toUpperCase();
+  if(ap==='PM' && h<12)h+=12;
+  if(ap==='AM' && h===12)h=0;
+  if(h>23||mi>59||sec>59)return null;
+  return {h,m:mi,s:sec};
+}
+function getRowDate(r, headers){
+  const dateCol=headers.find(c=>/^date$/i.test(c)) ||
+               headers.find(c=>/^date\s*$/i.test(c));
+  const dateTimeCol=headers.find(c=>/^date[ _-]?time$/i.test(c)) ||
+                   headers.find(c=>/date.*time|time.*date/i.test(c));
+  const timeCol=headers.find(c=>/^time$/i.test(c)) ||
+                headers.find(c=>/^timestamp$/i.test(c));
+  if(dateTimeCol){
+    const d=parseDateValue(r[dateTimeCol]);
+    if(d)return d;
+  }
+  if(dateCol && timeCol){
+    const dv=parseDateValue(r[dateCol]), tv=parseTimeValue(r[timeCol]);
+    if(dv && tv){
+      const d=new Date(dv);
+      d.setHours(tv.h,tv.m,tv.s,0);
+      return d;
+    }
+  }
+  if(timeCol){
+    const v=r[timeCol];
+    // If the Time column itself contains a full datetime, parse it.
+    const d=parseDateValue(v);
+    if(d && /[-/]/.test(clean(v))) return d;
+    // Excel/JS time-only values cannot provide a date; return null.
+  }
+  return null;
+}
+function numericColumns(obj){
+  const excluded=/^(date|time|date[ _-]?time|timestamp|id|cell id|nr cell id|operator id|integrity|earfcn|pci|eci|enodeb id|gnodeb id)$/i;
+  return obj.headers.filter(c=>{
+    const s=clean(c);
+    if(excluded.test(s))return false;
+    if(/^(date|time|timestamp)/i.test(s))return false;
+    if(/(^|[ _-])(name|identity|cell name|site name|operator|integrity)([ _-]|$)/i.test(s))return false;
+    // Num/Den are calculation helpers, not user-facing metrics.
+    if(/(?:^|[ _-])(num|den)(?:$|[ _-])/i.test(s))return false;
+    let n=0,tot=0;
+    obj.rows.slice(0,200).forEach(r=>{
+      const raw=clean(r[c]);
+      if(raw){
+        tot++;
+        const v=Number(String(raw).replace(/,/g,''));
+        if(Number.isFinite(v))n++;
+      }
+    });
+    return tot>0 && n/tot>=.70;
+  });
+}
+function metricPair(obj,metric){
+  const headers=obj.headers||[];
+  const cleanKey=s=>clean(s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const target=cleanKey(metric);
+  const directNum=headers.find(h=>cleanKey(h)===target+'num');
+  const directDen=headers.find(h=>cleanKey(h)===target+'den');
+  if(directNum&&directDen)return {num:directNum,den:directDen};
+  // Also support names where Num/Den are separated by punctuation/spaces.
+  const base=target.replace(/num$/,'').replace(/den$/,'');
+  const n=headers.find(h=>{const k=cleanKey(h);return k===base+'num'});
+  const d=headers.find(h=>{const k=cleanKey(h);return k===base+'den'});
+  return n&&d?{num:n,den:d}:null;
+}
+function aggregationType(obj,metric){
+  if(metricPair(obj,metric)) return 'WEIGHTED RATIO';
+  const k=clean(metric).toLowerCase();
+  // User-related KPIs are additive at the selected scope (site/band/cell).
+  if(/\buser\b|n\.?user|active\s*user|rrcconn.*active.*user|active.*ue|connected.*user/.test(k)) return 'SUM';
+  // Traffic / volume / count metrics are also additive.
+  if(/payload|traffic|volume|session\s*(count|number)?|attempt|transaction|count|number/.test(k)) return 'SUM';
+  return 'AVERAGE';
+}
+function aggregationLabel(obj,metric){
+  const t=aggregationType(obj,metric);
+  return t==='WEIGHTED RATIO'?'WEIGHTED RATIO (SUM Num / SUM Den)':t;
+}
+function getDataset(name){
+  if(name==='5G PLMN'){
+    const a=state['5G PLMN 1'],b=state['5G PLMN 2'];
+    if(!a||!b)return null;
+    const keys=['Time','gNodeB Name','Cell Name','NR Cell ID','gNodeB Function Name','Operator ID','Integrity'].filter(k=>a.headers.includes(k)&&b.headers.includes(k));
+    const map=new Map(), rows=[];
+    a.rows.forEach(r=>map.set(keys.map(x=>clean(r[x])).join('¦'),{...r}));
+    b.rows.forEach(r=>{
+      const k=keys.map(x=>clean(r[x])).join('¦');
+      rows.push(map.has(k)?{...map.get(k),...r}:r);
+      map.delete(k);
+    });
+    map.forEach(r=>rows.push(r));
+    return {rows,headers:[...new Set([...a.headers,...b.headers])]};
+  }
+  return state[name]||null;
+}
+function datasetReady(name){
+  if(name==='5G PLMN') return !!(state['5G PLMN 1']&&state['5G PLMN 2']);
+  return !!state[name];
+}
+function renderDatasetStatus(){
+  const items=[
+    ['4G KPI','f4gk'],
+    ['5G KPI','f5gk'],
+    ['4G PLMN','f4gp'],
+    ['5G PLMN #1','f5gp1'],
+    ['5G PLMN #2','f5gp2']
+  ];
+  const box=document.getElementById('datasetStatus');
+  box.innerHTML=items.map(([name,id])=>{
+    const ready=!!state[name];
+    return `<div class="metric"><span>${name}</span><b style="font-size:16px" class="${ready?'good':''}">${ready?'✓ Loaded':'○ Not uploaded'}</b></div>`;
+  }).join('');
+  const ds=document.getElementById('dataset');
+  const current=ds.value;
+  const options=[];
+  if(datasetReady('4G KPI'))options.push(['4G KPI','4G KPI']);
+  if(datasetReady('5G KPI'))options.push(['5G KPI','5G KPI']);
+  if(datasetReady('4G PLMN'))options.push(['4G PLMN','4G PLMN']);
+  if(datasetReady('5G PLMN'))options.push(['5G PLMN','5G PLMN']);
+  ds.innerHTML=options.length?options.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join(''):'<option value="">Upload a dataset first</option>';
+  if(options.some(x=>x[0]===current))ds.value=current;
+  else if(options.length)ds.value=options[0][0];
+  updateMetricBand();
+}
+function setDates(obj){
+  if(!obj)return;
+  const ds=obj.rows.map(r=>getRowDate(r,obj.headers)).filter(Boolean).sort((a,b)=>a-b);
+  if(!ds.length)return;
+  const min=ds[0].toISOString().slice(0,10),max=ds.at(-1).toISOString().slice(0,10);
+  document.getElementById('before').value=min;
+  document.getElementById('after').value=max;
+}
+function updateMetricBand(){
+  const obj=getDataset(document.getElementById('dataset').value);
+  if(!obj){
+    document.getElementById('metric').innerHTML='<option value="">No dataset available</option>';
+    document.getElementById('band').innerHTML='<option>ALL</option>';
+    return;
+  }
+  const ms=numericColumns(obj), sel=document.getElementById('metric');
+  sel.innerHTML=ms.length?ms.map(x=>`<option>${x.replaceAll('<','&lt;')}</option>`).join(''):'<option value="">No numeric metric found</option>';
+  document.getElementById('aggregation').value='AUTO';
+  setDates(obj);
+  updateScopeSelect();
+}
+function neCol(headers){return headers.find(c=>/^ne name$/i.test(c)) || headers.find(c=>/^eNodeB Name$/i.test(c)) || headers.find(c=>/^gNodeB Name$/i.test(c)) || ''}
+function status(p){return p>5?'IMPROVED':p>=-5?'STABLE':p>=-15?'MINOR DEGRADATION':'MAJOR DEGRADATION'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function getSiteValues(obj){
+  if(!obj)return [];
+  const nc=neCol(obj.headers);
+  return [...new Set(obj.rows.map(r=>clean(nc?r[nc]:'' )).filter(Boolean))].sort();
+}
+function getLevelValues(obj,level,site){
+  if(!obj)return [];
+  const cc=cellCol(obj.headers), nc=neCol(obj.headers);
+  const siteRows=site ? obj.rows.filter(r=>clean(nc?r[nc]:'')===site) : [];
+  if(level==='BAND') return [...new Set(siteRows.map(r=>bandFromCell(cc?r[cc]:'' )).filter(x=>x&&x!=='UNKNOWN'))].sort((a,b)=>Number(a)-Number(b));
+  if(level==='CELL') return [...new Set(siteRows.map(r=>clean(cc?r[cc]:'' )).filter(Boolean))].sort();
+  return [];
+}
+function updateScopeSelect(){
+  const obj=getDataset(document.getElementById('dataset').value);
+  const level=document.getElementById('level').value;
+  const siteSel=document.getElementById('siteSelect');
+  const scopeSel=document.getElementById('scopeSelect');
+  const siteSearch=clean(document.getElementById('siteSearch').value).toLowerCase();
+  const scopeSearch=clean(document.getElementById('scopeSearch').value).toLowerCase();
+  const prevSite=siteSel.value;
+  const prevScopeValues=[...scopeSel.selectedOptions].map(o=>o.value);
+
+  let sites=getSiteValues(obj);
+  if(siteSearch) sites=sites.filter(v=>v.toLowerCase().includes(siteSearch));
+  siteSel.innerHTML='<option value="">Select site</option>'+sites.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if(sites.includes(prevSite)) siteSel.value=prevSite;
+  else if(sites.length===1) siteSel.value=sites[0];
+  else siteSel.value='';
+
+  const site=siteSel.value;
+  const levelLabel=level==='BAND'?'Band':'Cell';
+  document.getElementById('scopeLabel').textContent=level==='SITE'?'Scope':levelLabel;
+  document.getElementById('scopeSearchLabel').textContent=level==='SITE'?'Search Band / Cell':`Search ${levelLabel}`;
+  document.getElementById('scopeSearch').placeholder=level==='SITE'?'optional...':`search ${levelLabel.toLowerCase()}...`;
+
+  if(level==='SITE'){
+    scopeSel.innerHTML='<option value="SITE">Selected Site</option>';
+    scopeSel.value='SITE';
+    document.getElementById('scopeSearch').disabled=true;
+  }else{
+    document.getElementById('scopeSearch').disabled=false;
+    let vals=getLevelValues(obj,level,site);
+    if(scopeSearch) vals=vals.filter(v=>v.toLowerCase().includes(scopeSearch));
+    const allLabel=level==='BAND'?'All Bands':'All Cells';
+    scopeSel.innerHTML=`<option value="ALL">${allLabel}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    const keep=prevScopeValues.filter(v=>v==='ALL'||vals.includes(v));
+    if(keep.includes('ALL') || !keep.length) scopeSel.value='ALL';
+    else keep.forEach(v=>{const o=[...scopeSel.options].find(x=>x.value===v);if(o)o.selected=true;});
+  }
+
+  let info=site?`Site: ${site}`:'Select a site';
+  if(level==='SITE') info += ' · Analysis: selected site';
+  else {
+    const sv=[...scopeSel.selectedOptions].map(o=>o.value);
+    if(sv.includes('ALL')) info += ` · ${levelLabel}: all in selected site`;
+    else info += ` · ${levelLabel}: ${sv.length} selected`;
+  }
+  document.getElementById('scopeInfo').textContent=info;
+}
+function applyScopeFilter(r,cell,ne,level,site,scope){
+  const ce=clean(r[cell]), nv=clean(ne?r[ne]:'');
+  if(!ce)return false;
+  if(site && nv!==site)return false;
+  if(level==='BAND'){
+    if(Array.isArray(scope)){ if(!scope.length || scope.includes('ALL')) return true; return scope.includes(bandFromCell(ce)); }
+    if(scope && scope!=='ALL' && bandFromCell(ce)!==scope)return false;
+  }
+  if(level==='CELL'){
+    if(Array.isArray(scope)){ if(!scope.length || scope.includes('ALL')) return true; return scope.includes(ce); }
+    if(scope && scope!=='ALL' && ce!==scope)return false;
+  }
+  return true;
+}
+function formatDateKey(d){
+  if(!d)return '';
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function formatDateDisplay(key){
+  if(!key)return '—';
+  const [y,m,d]=key.split('-'); return `${d}/${m}/${y}`;
+}
+function aggregateValues(values, mode, pairTotals){
+  if(mode==='WEIGHTED RATIO' && pairTotals){
+    return pairTotals.den ? pairTotals.num/pairTotals.den*100 : null;
+  }
+  if(!values.length)return null;
+  if(mode==='SUM')return values.reduce((a,b)=>a+b,0);
+  if(mode==='MIN')return Math.min(...values);
+  if(mode==='MAX')return Math.max(...values);
+  if(mode==='COUNT')return values.length;
+  return values.reduce((a,b)=>a+b,0)/values.length;
+}
+function analyze(){
+  const name=document.getElementById('dataset').value,obj=getDataset(name);
+  if(!name){alert('Upload at least one dataset first.');return}
+  if(name==='5G PLMN' && !datasetReady('5G PLMN')){alert('5G PLMN requires both #1 and #2 files.');return}
+  if(!obj){alert('Selected dataset is not available.');return}
+  if(!obj.headers.some(c=>/^time$/i.test(c)) && !obj.headers.some(c=>/date.*time|time.*date|timestamp/i.test(c)) && !obj.headers.some(c=>/^date$/i.test(c))){alert('Date/Time column not detected.');return}
+  const metric=document.getElementById('metric').value;if(!metric){alert('No metric selected.');return}
+  const pair=metricPair(obj,metric);
+  const cell=cellCol(obj.headers);if(!cell){alert('Cell/identity column not detected.');return}
+  const ne=neCol(obj.headers);
+  const bd=document.getElementById('before').value,ad=document.getElementById('after').value;
+  const hs=Number(document.getElementById('hstart').value.slice(0,2)), he=Number(document.getElementById('hend').value.slice(0,2));
+  const level=document.getElementById('level').value;
+  const site=document.getElementById('siteSelect').value;
+  const scopeValues=[...document.getElementById('scopeSelect').selectedOptions].map(o=>o.value);
+  const scope=scopeValues.includes('ALL')?'ALL':scopeValues;
+  if(!site){alert('Please select a site first.');return}
+  if((level==='BAND'||level==='CELL')&&!scopeValues.length){alert(`Please select a ${level.toLowerCase()} or use ${level==='BAND'?'All Bands':'All Cells'}.`);return}
+  const requestedAgg=document.getElementById('aggregation').value;
+  const aggType=requestedAgg==='AUTO'?aggregationType(obj,metric):requestedAgg;
+  const aggLabel=requestedAgg==='AUTO'?aggregationLabel(obj,metric):requestedAgg;
+  const usePair=requestedAgg==='AUTO' && !!pair;
+
+  const filtered=[];
+  obj.rows.forEach(r=>{
+    const d=getRowDate(r,obj.headers);if(!d)return;
+    const ds=formatDateKey(d),h=d.getHours();
+    if(ds!==bd&&ds!==ad)return;
+    if(h<hs||h>he)return;
+    if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope))return;
+    const raw=clean(r[metric]);
+    const v=Number(String(raw).replace(/,/g,''));
+    const hasValue=Number.isFinite(v);
+    let num=null,den=null;
+    if(usePair){
+      num=Number(String(r[pair.num]??'').replace(/,/g,''));
+      den=Number(String(r[pair.den]??'').replace(/,/g,''));
+      if(!Number.isFinite(num))num=null;if(!Number.isFinite(den))den=null;
+    }
+    if(!hasValue && !usePair)return;
+    filtered.push({r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'')||'—',band:bandFromCell(r[cell]),v:hasValue?v:null,num,den});
+  });
+
+  if(!filtered.length){alert('No rows match the selected dates, hours and scope.');return}
+
+  // WPC: aggregate each selected scope entity across the chosen date/hour window.
+  const groups=new Map();
+  filtered.forEach(x=>{
+    // WPC always stays at CELL level. The selected Site/Band/Cell is only the scope filter.
+    const key=x.cell, displayCell=x.cell, displayNe=x.ne, displayBand=x.band;
+    if(!groups.has(key))groups.set(key,{cell:displayCell,ne:displayNe,band:displayBand,before:[],after:[],bn:0,bd:0,an:0,ad:0});
+    const g=groups.get(key), side=x.ds===bd?'before':'after';
+    if(x.v!=null)g[side].push(x.v);
+    if(usePair){if(x.num!=null)g[side==='before'?'bn':'an']+=x.num;if(x.den!=null)g[side==='before'?'bd':'ad']+=x.den;}
+  });
+  const rows=[...groups.values()].map(g=>{
+    const b=aggregateValues(g.before,aggType,usePair?{num:g.bn,den:g.bd}:null);
+    const a=aggregateValues(g.after,aggType,usePair?{num:g.an,den:g.ad}:null);
+    const pct=b!=null&&a!=null&&b!==0?(a-b)/b*100:null;
+    return {cell:g.cell,ne:g.ne||'—',band:g.band||'UNKNOWN',before:b,after:a,pct,status:pct==null?'NO DATA':status(pct)};
+  }).filter(x=>x.pct!=null);
+
+  const beforeDisplay=formatDateDisplay(bd),afterDisplay=formatDateDisplay(ad);
+  ['wpcBeforeDate','wpcBeforeDate2'].forEach(id=>document.getElementById(id).textContent=beforeDisplay);
+  ['wpcAfterDate','wpcAfterDate2'].forEach(id=>document.getElementById(id).textContent=afterDisplay);
+  ['worstBeforeHead','bestBeforeHead'].forEach(id=>document.getElementById(id).textContent=`Before (${beforeDisplay})`);
+  ['worstAfterHead','bestAfterHead'].forEach(id=>document.getElementById(id).textContent=`After (${afterDisplay})`);
+  document.getElementById('aggregationInfo').textContent=`Aggregation: ${aggLabel}${requestedAgg==='AUTO'?' (default)':' (manual override)'}`;
+
+  document.getElementById('mCells').textContent=rows.length;
+  document.getElementById('mGood').textContent=rows.filter(x=>x.pct>5).length;
+  document.getElementById('mStable').textContent=rows.filter(x=>x.pct>=-5&&x.pct<=5).length;
+  document.getElementById('mBad').textContent=rows.filter(x=>x.pct<-5).length;
+  const avg=rows.length?rows.reduce((a,x)=>a+x.pct,0)/rows.length:null;
+  document.getElementById('mDelta').textContent=avg==null?'—':avg.toFixed(2)+'%';
+  const worst=[...rows].sort((a,b)=>a.pct-b.pct).slice(0,20),best=[...rows].sort((a,b)=>b.pct-a.pct).slice(0,20);
+  const tr=x=>`<tr><td>${x.rank}</td><td>${esc(x.ne)}</td><td>${esc(x.band)}</td><td>${esc(x.cell)}</td><td>${x.before!=null?x.before.toFixed(3):'—'}</td><td>${x.after!=null?x.after.toFixed(3):'—'}</td><td class="${x.pct<0?'bad':'good'}">${x.pct.toFixed(2)}%</td></tr>`;
+  document.getElementById('worst').innerHTML=worst.map((x,i)=>tr({...x,rank:i+1})).join('');
+  document.getElementById('best').innerHTML=best.map((x,i)=>tr({...x,rank:i+1})).join('');
+
+  // Trend: preserve the full chronological date/hour range between Before and After.
+  // At SITE/BAND level, plot one line per cell (Excel/PivotChart-like behavior).
+  // WPC still compares only the two endpoint dates selected above.
+  const trendStart = bd < ad ? bd : ad;
+  const trendEnd = bd > ad ? bd : ad;
+  const inTrendRange = x => x.ds>=trendStart && x.ds<=trendEnd && x.h>=hs && x.h<=he;
+  const trendFiltered=filtered.concat(
+    obj.rows.map(r=>{
+      const d=getRowDate(r,obj.headers); if(!d)return null;
+      const ds=formatDateKey(d),h=d.getHours();
+      if(ds<trendStart||ds>trendEnd||h<hs||h>he)return null;
+      if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope))return null;
+      const raw=clean(r[metric]);
+      const v=Number(String(raw).replace(/,/g,''));
+      const hasValue=Number.isFinite(v);
+      let num=null,den=null;
+      if(usePair){
+        num=Number(String(r[pair.num]??'').replace(/,/g,''));
+        den=Number(String(r[pair.den]??'').replace(/,/g,''));
+        if(!Number.isFinite(num))num=null;if(!Number.isFinite(den))den=null;
+      }
+      if(!hasValue && !usePair)return null;
+      return {r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'' )||'—',band:bandFromCell(r[cell]),v:hasValue?v:null,num,den};
+    }).filter(Boolean).filter(x=>!filtered.some(y=>y.r===x.r && y.ds===x.ds && y.h===x.h))
+  );
+
+  const timeKeys=new Set(trendFiltered.map(x=>`${x.ds}T${String(x.h).padStart(2,'0')}:00`));
+  const times=[...timeKeys].sort();
+  const trendLabels=times.map(k=>{const [date,h]=k.split('T');return `${formatDateDisplay(date)} ${h}`});
+
+  // Trend Level is independent from Analysis Level. Analysis scope filters the data;
+  // Trend Level controls how the filtered data is grouped into chart lines.
+  // Example: Analysis Level = BAND, 23 only + Trend Level = CELL => one line per cell inside band 23.
+  const trendLevel=document.getElementById('trendLevel').value;
+  const entityMap=new Map();
+  const addEntity=(key,label,meta)=>{
+    if(!entityMap.has(key))entityMap.set(key,{label,...meta,points:new Map()});
+    return entityMap.get(key);
+  };
+  trendFiltered.forEach(x=>{
+    let key,label,meta={};
+    if(trendLevel==='SITE'){
+      key='SITE'; label=site; meta={ne:x.ne,band:'ALL BANDS'};
+    }else if(trendLevel==='BAND'){
+      const b=x.band||'UNKNOWN';
+      key=b; label=b; meta={ne:x.ne,band:b};
+    }else{
+      const c=x.cell||'UNKNOWN';
+      key=c; label=c; meta={ne:x.ne,band:x.band};
+    }
+    const e=addEntity(key,label,meta);
+    const tk=`${x.ds}T${String(x.h).padStart(2,'0')}:00`;
+    if(!e.points.has(tk))e.points.set(tk,{v:[],n:0,d:0});
+    const q=e.points.get(tk);
+    if(x.v!=null)q.v.push(x.v);
+    if(usePair){if(x.num!=null)q.n+=x.num;if(x.den!=null)q.d+=x.den;}
+  });
+
+  const trendDatasets=[];
+  [...entityMap.values()]
+    .sort((a,b)=>a.label.localeCompare(b.label))
+    .forEach(e=>{
+      const data=times.map(tk=>{
+        const q=e.points.get(tk);
+        if(!q)return null;
+        return aggregateValues(q.v,aggType,usePair?{num:q.n,den:q.d}:null);
+      });
+      trendDatasets.push({label:e.label,data,tension:.2,spanGaps:false,pointRadius:2});
+    });
+
+  const trendEntityLabel=trendLevel==='SITE'?'site total':trendLevel==='BAND'?(trendDatasets.length+' bands'):(trendDatasets.length+' cells');
+  document.getElementById('trendInfo').textContent=`Trend grouping: ${trendLevel==='SITE'?'Site total':trendLevel==='BAND'?'Band':'Cell'} · filtered by ${level==='SITE'?'selected site':level==='BAND'?'selected band(s)':'selected cell(s)'}`;
+  document.getElementById('trendDates').textContent=`${formatDateDisplay(trendStart)} → ${formatDateDisplay(trendEnd)} · ${times.length} timestamps · ${trendEntityLabel}`;
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('trend'),{
+    type:'line',
+    data:{labels:trendLabels,datasets:trendDatasets},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:24}},tooltip:{callbacks:{title:items=>items.length?items[0].label:''}}},scales:{x:{title:{display:true,text:'Date & Hour'},ticks:{autoSkip:true,maxTicksLimit:32,maxRotation:45,minRotation:45}},y:{title:{display:true,text:metric}}}}
+  });
+  document.getElementById('status').textContent=`${name}: ${rows.length.toLocaleString()} cells analyzed · Site ${site}${level!=='SITE'?` · ${level} ${scope==='ALL'?'ALL':scopeValues.join(', ')}`:''} · ${times.length} timestamps`;
+}
+
+['f4gk','f5gk','f4gp','f5gp1','f5gp2'].forEach(id=>document.getElementById(id).addEventListener('change',async e=>{
+  const map={f4gk:'4G KPI',f5gk:'5G KPI',f4gp:'4G PLMN',f5gp1:'5G PLMN 1',f5gp2:'5G PLMN 2'};
+  const name=map[id],file=e.target.files[0];if(!file)return;
+  const label=document.getElementById('n'+id.slice(1));
+  if(label)label.textContent='Loading…';
+  try{
+    state[name]=await loadFile(file);
+    const obj=state[name];
+    const hasTime=obj.headers.some(c=>/^time$/i.test(c)) ||
+                  obj.headers.some(c=>/^date[ _-]?time$/i.test(c)) ||
+                  obj.headers.some(c=>/timestamp/i.test(c));
+    const hasDate=obj.headers.some(c=>/^date$/i.test(c));
+    const hasCell=obj.headers.some(c=>/cell name|cellname/i.test(c));
+    const hasNode=obj.headers.some(c=>/eNodeB Name|gNodeB Name/i.test(c));
+    const looksGood=hasTime || (hasDate && obj.headers.some(c=>/^time$/i.test(c)));
+    if(label){
+      label.textContent=`${obj.rows.length.toLocaleString()} rows`;
+      label.className='files '+(looksGood?'fileok':'filewarn');
+      if(!looksGood) label.title='Time/Date+Time column was not detected';
+    }
+    renderDatasetStatus();
+    document.getElementById('status').textContent=`${name} loaded`;
+  }catch(err){
+    console.error(err);
+    if(label)label.textContent='Load error';
+    alert(`${name}: ${err.message}`);
+  }
+}));
+document.getElementById('trendLevel').addEventListener('change',()=>{ document.getElementById('trendInfo').textContent=`Trend grouping: ${document.getElementById('trendLevel').value==='SITE'?'Site total':document.getElementById('trendLevel').value==='BAND'?'Band':'Cell'}`; });
+
+document.getElementById('dataset').addEventListener('change',updateMetricBand);
+document.getElementById('level').addEventListener('change',()=>{updateScopeSelect();});
+document.getElementById('siteSelect').addEventListener('change',()=>{updateScopeSelect();});
+document.getElementById('scopeSelect').addEventListener('change',()=>{updateScopeSelect();});
+document.getElementById('siteSearch').addEventListener('input',()=>{updateScopeSelect();});
+document.getElementById('scopeSearch').addEventListener('input',()=>{updateScopeSelect();});
+document.getElementById('aggregation').addEventListener('change',()=>{const obj=getDataset(document.getElementById('dataset').value),m=document.getElementById('metric').value; if(obj&&m) document.getElementById('aggregationInfo').textContent=`Aggregation: ${document.getElementById('aggregation').value==='AUTO'?aggregationLabel(obj,m):document.getElementById('aggregation').value+' (manual override)'}`;});
+document.getElementById('metric').addEventListener('change',()=>{const obj=getDataset(document.getElementById('dataset').value),m=document.getElementById('metric').value; if(obj&&m) document.getElementById('aggregationInfo').textContent=`Aggregation: ${document.getElementById('aggregation').value==='AUTO'?aggregationLabel(obj,m):document.getElementById('aggregation').value+' (manual override)'}`;});
+document.getElementById('analyze').addEventListener('click',analyze);
+renderDatasetStatus();
+window.addEventListener('error', e=>{
+  const s=document.getElementById('status');
+  if(s) s.textContent='JavaScript error: '+e.message;
+  console.error(e.error||e.message);
+});
+</script>
+</body></html>
