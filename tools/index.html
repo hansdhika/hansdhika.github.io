@@ -1,93 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Hans Dhika portfolio">
-<title>Tools | Hans Dhika</title>
-<link rel="stylesheet" href="../style.css">
-</head>
-
-<body>
-
-<header>
-    <div class="container nav">
-        <a class="logo" href="../">HD.</a>
-
-        <button class="menu" id="menu">☰</button>
-
-        <nav id="nav">
-            <a class="" href="../">Home</a>
-            <a class="active" href="./">Tools</a>
-            <a class="" href="../projects/">Projects</a>
-            <a class="" href="../about/">About</a>
-            <a class="" href="../contact/">Contact</a>
-        </nav>
-    </div>
-</header>
-
-<main class="container section">
-
-    <div class="section-title">
-        <p class="label">TOOLS</p>
-
-        <h1>Tools I've been building.</h1>
-
-        <p class="muted">
-            Small projects I made while learning and trying to make repetitive tasks a little easier.
-        </p>
-    </div>
-
-    <div class="grid">
-
-        <!-- 01 MML Parser -->
-        <a class="card" href="./mml-parser/">
-            <small>01</small>
-            <h3>MML Parser</h3>
-            <p>
-                Upload a Huawei MML TXT/LOG file, parse command blocks,
-                preview the result, and export XLSX.
-            </p>
-        </a>
-
-        <!-- 02 KPI Analyzer -->
-        <div class="card">
-            <small>02</small>
-            <h3>KPI Analyzer</h3>
-            <p>
-                Coming soon — browser-based KPI analysis for raw network data.
-            </p>
-        </div>
-
-        <!-- 03 Excel Processor -->
-        <div class="card">
-            <small>03</small>
-            <h3>Excel Processor</h3>
-            <p>
-                Coming soon — simple utilities for common Excel processing tasks.
-            </p>
-        </div>
-
-        <!-- 04 MML Creator -->
-        <a class="card" href="./mml-creator/">
-            <small>04</small>
-            <h3>MML Creator</h3>
-            <p>
-                Create Huawei MML configuration commands with parameter
-                validation and ready-to-use output.
-            </p>
-        </a>
-
-    </div>
-
-</main>
-
-<footer>
-    © <span id="year"></span> Hans Dhika ·
-    <em>Per Aspera Ad Astra.</em>
-</footer>
-
-<script src="../script.js"></script>
-
-</body>
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="Hans Dhika portfolio" name="description"/>
+  <title>
+   Tools | Hans Dhika
+  </title>
+  <link href="../style.css" rel="stylesheet"/>
+ </head>
+ <body>
+  <header>
+   <div class="container nav">
+    <a class="logo" href="../">
+     HD.
+    </a>
+    <button aria-label="Open navigation" class="menu" id="menu">
+     ☰
+    </button>
+    <nav aria-label="Main navigation" id="nav">
+     <a class="" href="../">
+      Home
+     </a>
+     <a class="active" href="./">
+      Tools
+     </a>
+     <a class="" href="../projects/">
+      Projects
+     </a>
+     <a class="" href="../about/">
+      About
+     </a>
+     <a class="" href="../contact/">
+      Contact
+     </a>
+    </nav>
+   </div>
+  </header>
+  <main class="container section">
+   <div class="section-title">
+    <p class="label">
+     TOOLS
+    </p>
+    <h1>
+     Tools I've been building.
+    </h1>
+    <p class="muted">
+     Small projects I made while learning and trying to make repetitive tasks a little easier.
+    </p>
+   </div>
+   <div class="grid">
+    <a class="card" href="./kpi-monitoring/">
+     <small>
+      01
+     </small>
+     <h3>
+      KPI Monitoring
+     </h3>
+     <p>
+      Hourly before / after analysis for 4G &amp; 5G KPI data with trend views by site, band, and cell.
+     </p>
+    </a>
+    <a class="card" href="./mml-parser/">
+     <small>
+      02
+     </small>
+     <h3>
+      MML Parser
+     </h3>
+     <p>
+      Upload Huawei MML TXT or LOG files, parse command blocks, preview results, and export XLSX.
+     </p>
+    </a>
+    <a class="card" href="./mml-creator/">
+     <small>
+      03
+     </small>
+     <h3>
+      MML Creator
+     </h3>
+     <p>
+      Build Huawei MML configuration commands with parameter validation and ready-to-use output.
+     </p>
+    </a>
+    <a class="card" href="./5g-report-automation.html">
+     <small>
+      04
+     </small>
+     <h3>
+      5G Report Automation
+     </h3>
+     <p>
+      Python workflow for processing raw network KPI data and generating structured reports.
+     </p>
+    </a>
+    <a class="card" href="./excel-csv-processor.html">
+     <small>
+      05
+     </small>
+     <h3>
+      Excel / CSV Processor
+     </h3>
+     <p>
+      Utilities for cleaning, combining, mapping, and transforming common network data files.
+     </p>
+    </a>
+    <a class="card" href="./kpi-analytics.html">
+     <small>
+      06
+     </small>
+     <h3>
+      KPI Analytics Dashboard
+     </h3>
+     <p>
+      Exploration of network KPI visualization and analysis across cells, towers, clusters, and time.
+     </p>
+    </a>
+   </div>
+  </main>
+  <footer>
+   &copy;
+   <span id="year">
+   </span>
+   Hans Dhika &middot;
+   <em>
+    Per Aspera Ad Astra.
+   </em>
+  </footer>
+  <script src="../script.js">
+  </script>
+ </body>
 </html>

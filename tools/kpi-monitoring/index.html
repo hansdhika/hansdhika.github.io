@@ -1,137 +1,557 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KPI Monitoring</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="assets/site-header.css">
-<style>
-:root{--bg:#fff;--card:#fff;--text:#171717;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#15803d;--bad:#dc2626;--warn:#b45309;--soft:#f7f7f5}
+ <head>
+  <link href="../../style.css" rel="stylesheet"/>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   KPI Monitoring
+  </title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
+  </script>
+  <style>
+   :root{--bg:#fff;--card:#fff;--text:#171717;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#15803d;--bad:#dc2626;--warn:#b45309;--soft:#f7f7f5}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.5}
 
 .wrap{width:min(1120px,92vw);margin:0 auto;padding:46px 0 70px}.crumb{font-size:12px;color:var(--muted);margin-bottom:18px}.crumb a{text-decoration:underline;text-underline-offset:3px}.hero{padding:4px 0 34px;border-bottom:1px solid var(--line);margin-bottom:28px}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}.hero h1{margin:8px 0 5px;font-size:clamp(30px,5vw,46px);letter-spacing:-.045em;line-height:1.05}.sub{color:var(--muted);font-size:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px}.card h3{font-size:14px;margin:0 0 14px;letter-spacing:-.01em}.template{margin-top:14px;padding:12px 14px;border:1px dashed #cfcfc9;border-radius:9px;background:var(--soft);font-size:12px;color:#555}.template b{color:#222}.template code{font-size:11px;background:#fff;padding:2px 5px;border:1px solid #e7e7e2;border-radius:4px}.template-toggle{cursor:pointer;color:#111;text-decoration:underline;text-underline-offset:2px;font-weight:600}.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}input,select,button{width:100%;padding:9px 10px;border:1px solid #d9dce1;border-radius:7px;background:#fff;color:#222;font:inherit;font-size:12px}input:focus,select:focus{outline:2px solid #e5e7eb;outline-offset:1px}.multi{min-height:92px}.multi option{padding:4px 6px}button{background:#111827;color:#fff;border-color:#111827;font-weight:700;cursor:pointer;letter-spacing:.02em}button:hover{opacity:.9}button.secondary{background:#f3f4f6;color:#111827;border-color:#e5e7eb}.files{font-size:11px;color:var(--muted);margin-top:5px;min-height:16px}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.metric{padding:14px;border:1px solid var(--line);border-radius:10px}.metric b{display:block;font-size:22px;margin-top:4px}.metric span{font-size:11px;color:var(--muted)}.chartbox{height:390px}.metric b.good{color:var(--good)}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#fafafa;position:sticky;top:0;font-size:11px;color:#555}.bad{color:var(--bad);font-weight:700}.good{color:var(--good);font-weight:700}.warn{color:var(--warn);font-weight:700}.scroll{max-height:360px;overflow:auto}.status{font-size:12px;color:var(--muted)}.site-footer{border-top:1px solid var(--line);padding:22px 0;color:var(--muted);font-size:11px}.footer-inner{width:min(1120px,92vw);margin:auto;display:flex;justify-content:space-between;gap:20px}
 @media(max-width:1000px){.grid5,.cards{grid-template-columns:repeat(2,1fr)}.grid4,.two{grid-template-columns:1fr}.navlinks{gap:18px}}
 @media(max-width:650px){.nav{height:60px}.menu{display:block}.navlinks{display:none;position:absolute;top:60px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);padding:14px 4vw;flex-direction:column;align-items:flex-start;gap:12px}.navlinks.open{display:flex}.wrap{width:92vw;padding-top:30px}.grid5,.grid4,.cards{grid-template-columns:1fr}.hero h1{font-size:34px}.chartbox{height:300px}.footer-inner{display:block}.footer-inner span{display:block;margin-top:5px}}
-</style>>
-</head>
-<body>
-<header class="site-header">
-  <nav class="nav">
-    <a class="logo" href="https://hansdhika.github.io/">HD.</a>
-    <button class="menu" id="menuBtn" aria-label="Open menu">☰</button>
-    <div class="navlinks" id="navlinks">
-      <a href="https://hansdhika.github.io/">Home</a>
-      <a href="https://hansdhika.github.io/tools/">Tools</a>
-      <a href="https://hansdhika.github.io/#projects">Projects</a>
-      <a href="https://hansdhika.github.io/#about">About</a>
-      <a href="https://hansdhika.github.io/#contact">Contact</a>
+  </style>
+  <meta content="Hans Dhika portfolio and tools" name="description"/>
+ </head>
+ <body>
+  <header>
+   <div class="container nav">
+    <a class="logo" href="../../">
+     HD.
+    </a>
+    <button aria-label="Open navigation" class="menu" id="menu">
+     ☰
+    </button>
+    <nav aria-label="Main navigation" id="nav">
+     <a class="" href="../../">
+      Home
+     </a>
+     <a class="active" href="../">
+      Tools
+     </a>
+     <a class="" href="../../projects/">
+      Projects
+     </a>
+     <a class="" href="../../about/">
+      About
+     </a>
+     <a class="" href="../../contact/">
+      Contact
+     </a>
+    </nav>
+   </div>
+  </header>
+  <div class="wrap">
+   <div class="crumb">
+    <a href="https://hansdhika.github.io/tools/">
+     Tools
+    </a>
+    <span>
+     &rsaquo;
+    </span>
+    KPI Monitoring
+   </div>
+   <section class="hero">
+    <div class="eyebrow">
+     02 / TOOL
     </div>
-  </nav>
-</header>
-
-<div class="wrap">
-  <div class="crumb"><a href="https://hansdhika.github.io/tools/">Tools</a> <span>›</span> KPI Monitoring</div>
-  <section class="hero">
-    <div class="eyebrow">02 / TOOL</div>
-    <h1>KPI Monitoring</h1>
-    <div class="sub">Hourly Before / After analysis for 4G &amp; 5G network KPI data.</div>
-    <div class="status" id="status" style="margin-top:8px">Waiting for files</div>
-  </section>
-
-  <div class="card">
-    <h3>Data Source</h3>
+    <h1>
+     KPI Monitoring
+    </h1>
+    <div class="sub">
+     Hourly Before / After analysis for 4G &amp; 5G network KPI data.
+    </div>
+    <div class="status" id="status" style="margin-top:8px">
+     Waiting for files
+    </div>
+   </section>
+   <div class="card">
+    <h3>
+     Data Source
+    </h3>
     <div class="grid5">
-      <div><label>4G KPI</label><input id="f4gk" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n4gk">—</div></div>
-      <div><label>5G KPI</label><input id="f5gk" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gk">—</div></div>
-      <div><label>4G PLMN</label><input id="f4gp" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n4gp">—</div></div>
-      <div><label>5G PLMN #1</label><input id="f5gp1" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gp1">—</div></div>
-      <div><label>5G PLMN #2</label><input id="f5gp2" type="file" accept=".csv,.xlsx,.xls"><div class="files" id="n5gp2">—</div></div>
+     <div>
+      <label>
+       4G KPI
+      </label>
+      <input accept=".csv,.xlsx,.xls" id="f4gk" type="file"/>
+      <div class="files" id="n4gk">
+       &mdash;
+      </div>
+     </div>
+     <div>
+      <label>
+       5G KPI
+      </label>
+      <input accept=".csv,.xlsx,.xls" id="f5gk" type="file"/>
+      <div class="files" id="n5gk">
+       &mdash;
+      </div>
+     </div>
+     <div>
+      <label>
+       4G PLMN
+      </label>
+      <input accept=".csv,.xlsx,.xls" id="f4gp" type="file"/>
+      <div class="files" id="n4gp">
+       &mdash;
+      </div>
+     </div>
+     <div>
+      <label>
+       5G PLMN #1
+      </label>
+      <input accept=".csv,.xlsx,.xls" id="f5gp1" type="file"/>
+      <div class="files" id="n5gp1">
+       &mdash;
+      </div>
+     </div>
+     <div>
+      <label>
+       5G PLMN #2
+      </label>
+      <input accept=".csv,.xlsx,.xls" id="f5gp2" type="file"/>
+      <div class="files" id="n5gp2">
+       &mdash;
+      </div>
+     </div>
     </div>
     <div class="template">
-      <b>FOLLOW THIS TEMPLATE</b> — upload the raw Huawei export without manually changing the columns.
+     <b>
+      FOLLOW THIS TEMPLATE
+     </b>
+     &mdash; upload the raw Huawei export without manually changing the columns.
       The tool detects the header row automatically. Required identity/time fields are detected by name.
-      <span class="template-toggle" onclick="document.getElementById('templateDetail').hidden=!document.getElementById('templateDetail').hidden"> Show expected fields</span>
-      <div id="templateDetail" hidden style="margin-top:8px;line-height:1.7">
-        <b>4G KPI:</b> <code>Date</code> + <code>Time</code> + cell/NE identity + KPI columns.<br>
-        <b>5G KPI:</b> <code>Time</code> + <code>gNodeB Name</code> + <code>Cell Name</code> + KPI columns.<br>
-        <b>4G PLMN:</b> date/time + cell/NE identity + PLMN KPI columns.<br>
-        <b>5G PLMN:</b> #1 and #2 with common keys
-        <code>Time</code>, <code>gNodeB Name</code>, <code>Cell Name</code>, <code>NR Cell ID</code>,
-        <code>gNodeB Function Name</code>, <code>Operator ID</code>, <code>Integrity</code>.
-      </div>
+     <span class="template-toggle" onclick="document.getElementById('templateDetail').hidden=!document.getElementById('templateDetail').hidden">
+      Show expected fields
+     </span>
+     <div hidden="" id="templateDetail" style="margin-top:8px;line-height:1.7">
+      <b>
+       4G KPI:
+      </b>
+      <code>
+       Date
+      </code>
+      +
+      <code>
+       Time
+      </code>
+      + cell/NE identity + KPI columns.
+      <br/>
+      <b>
+       5G KPI:
+      </b>
+      <code>
+       Time
+      </code>
+      +
+      <code>
+       gNodeB Name
+      </code>
+      +
+      <code>
+       Cell Name
+      </code>
+      + KPI columns.
+      <br/>
+      <b>
+       4G PLMN:
+      </b>
+      date/time + cell/NE identity + PLMN KPI columns.
+      <br/>
+      <b>
+       5G PLMN:
+      </b>
+      #1 and #2 with common keys
+      <code>
+       Time
+      </code>
+      ,
+      <code>
+       gNodeB Name
+      </code>
+      ,
+      <code>
+       Cell Name
+      </code>
+      ,
+      <code>
+       NR Cell ID
+      </code>
+      ,
+      <code>
+       gNodeB Function Name
+      </code>
+      ,
+      <code>
+       Operator ID
+      </code>
+      ,
+      <code>
+       Integrity
+      </code>
+      .
+     </div>
     </div>
-  </div>
-
-  <div class="card">
-    <h3>Available Dataset</h3>
-    <div id="datasetStatus" class="grid4"></div>
+   </div>
+   <div class="card">
+    <h3>
+     Available Dataset
+    </h3>
+    <div class="grid4" id="datasetStatus">
+    </div>
     <div class="status" style="margin-top:8px">
-      Dataset yang belum di-upload tidak menghalangi dataset lain. 5G PLMN membutuhkan #1 dan #2.
+     Dataset yang belum di-upload tidak menghalangi dataset lain. 5G PLMN membutuhkan #1 dan #2.
     </div>
-  </div>
-
-  <div class="card">
-    <h3>Analysis</h3>
+   </div>
+   <div class="card">
+    <h3>
+     Analysis
+    </h3>
     <div class="grid4">
-      <div><label>Dataset</label><select id="dataset"><option value="">Upload a dataset first</option></select></div>
-      <div><label>Before Date</label><input id="before" type="date"></div>
-      <div><label>After Date</label><input id="after" type="date"></div>
-      <div><label>Metric</label><select id="metric"><option value="">Auto detect after upload</option></select></div>
+     <div>
+      <label>
+       Dataset
+      </label>
+      <select id="dataset">
+       <option value="">
+        Upload a dataset first
+       </option>
+      </select>
+     </div>
+     <div>
+      <label>
+       Before Date
+      </label>
+      <input id="before" type="date"/>
+     </div>
+     <div>
+      <label>
+       After Date
+      </label>
+      <input id="after" type="date"/>
+     </div>
+     <div>
+      <label>
+       Metric
+      </label>
+      <select id="metric">
+       <option value="">
+        Auto detect after upload
+       </option>
+      </select>
+     </div>
     </div>
     <div class="grid4" style="margin-top:10px">
-      <div><label>Start Hour</label><input id="hstart" type="time" value="00:00"></div>
-      <div><label>End Hour</label><input id="hend" type="time" value="23:00"></div>
-      <div><label>Analysis Level</label><select id="level"><option value="SITE">Site</option><option value="BAND">Band</option><option value="CELL">Cell</option></select></div>
-      <div><label>Site</label><select id="siteSelect"><option value="">Select site</option></select></div>
+     <div>
+      <label>
+       Start Hour
+      </label>
+      <input id="hstart" type="time" value="00:00"/>
+     </div>
+     <div>
+      <label>
+       End Hour
+      </label>
+      <input id="hend" type="time" value="23:00"/>
+     </div>
+     <div>
+      <label>
+       Analysis Level
+      </label>
+      <select id="level">
+       <option value="SITE">
+        Site
+       </option>
+       <option value="BAND">
+        Band
+       </option>
+       <option value="CELL">
+        Cell
+       </option>
+      </select>
+     </div>
+     <div>
+      <label>
+       Site
+      </label>
+      <select id="siteSelect">
+       <option value="">
+        Select site
+       </option>
+      </select>
+     </div>
     </div>
     <div class="grid4" style="margin-top:10px">
-      <div><label>Search Site</label><input id="siteSearch" placeholder="search site..."></div>
-      <div><label id="scopeLabel">Band / Cell (multi-select)</label><select id="scopeSelect" class="multi" multiple size="4"></select></div>
-      <div><label id="scopeSearchLabel">Search Band / Cell</label><input id="scopeSearch" placeholder="search band / cell..."></div>
-      <div><div class="status" id="scopeInfo" style="margin-top:23px">Select a site to begin.</div></div>
+     <div>
+      <label>
+       Search Site
+      </label>
+      <input id="siteSearch" placeholder="search site..."/>
+     </div>
+     <div>
+      <label id="scopeLabel">
+       Band / Cell (multi-select)
+      </label>
+      <select class="multi" id="scopeSelect" multiple="" size="4">
+      </select>
+     </div>
+     <div>
+      <label id="scopeSearchLabel">
+       Search Band / Cell
+      </label>
+      <input id="scopeSearch" placeholder="search band / cell..."/>
+     </div>
+     <div>
+      <div class="status" id="scopeInfo" style="margin-top:23px">
+       Select a site to begin.
+      </div>
+     </div>
     </div>
     <div class="grid4" style="margin-top:10px">
-      <div><label>Aggregation</label><select id="aggregation"><option value="AUTO">Auto / Default</option><option value="SUM">Sum</option><option value="AVERAGE">Average</option><option value="MIN">Min</option><option value="MAX">Max</option><option value="COUNT">Count</option></select></div>
-      <div style="grid-column:span 3"><div class="status" id="aggregationInfo" style="margin-top:23px">Aggregation: —</div></div>
+     <div>
+      <label>
+       Aggregation
+      </label>
+      <select id="aggregation">
+       <option value="AUTO">
+        Auto / Default
+       </option>
+       <option value="SUM">
+        Sum
+       </option>
+       <option value="AVERAGE">
+        Average
+       </option>
+       <option value="MIN">
+        Min
+       </option>
+       <option value="MAX">
+        Max
+       </option>
+       <option value="COUNT">
+        Count
+       </option>
+      </select>
+     </div>
+     <div style="grid-column:span 3">
+      <div class="status" id="aggregationInfo" style="margin-top:23px">
+       Aggregation: &mdash;
+      </div>
+     </div>
     </div>
     <div class="grid4" style="margin-top:10px">
-      <div><label>Trend Level</label><select id="trendLevel"><option value="SITE">Site</option><option value="BAND">Band</option><option value="CELL" selected>Cell</option></select></div>
-      <div style="grid-column:span 3"><div class="status" id="trendInfo" style="margin-top:23px">Trend grouping: Cell</div></div>
+     <div>
+      <label>
+       Trend Level
+      </label>
+      <select id="trendLevel">
+       <option value="SITE">
+        Site
+       </option>
+       <option value="BAND">
+        Band
+       </option>
+       <option selected="" value="CELL">
+        Cell
+       </option>
+      </select>
+     </div>
+     <div style="grid-column:span 3">
+      <div class="status" id="trendInfo" style="margin-top:23px">
+       Trend grouping: Cell
+      </div>
+     </div>
     </div>
-    <div style="margin-top:12px"><button id="analyze">ANALYZE</button></div>
-  </div>
-
-  <div class="cards">
-    <div class="metric"><span>Cells</span><b id="mCells">—</b></div>
-    <div class="metric"><span>Improved</span><b id="mGood">—</b></div>
-    <div class="metric"><span>Stable</span><b id="mStable">—</b></div>
-    <div class="metric"><span>Degraded</span><b id="mBad">—</b></div>
-    <div class="metric"><span>Avg Δ%</span><b id="mDelta">—</b></div>
-  </div>
-
-  <div class="card"><h3>Hourly Trend <span id="trendDates" class="status" style="font-weight:400;margin-left:8px"></span></h3><div class="chartbox"><canvas id="trend"></canvas></div></div>
-
-  <div class="two">
+    <div style="margin-top:12px">
+     <button id="analyze">
+      ANALYZE
+     </button>
+    </div>
+   </div>
+   <div class="cards">
+    <div class="metric">
+     <span>
+      Cells
+     </span>
+     <b id="mCells">
+      &mdash;
+     </b>
+    </div>
+    <div class="metric">
+     <span>
+      Improved
+     </span>
+     <b id="mGood">
+      &mdash;
+     </b>
+    </div>
+    <div class="metric">
+     <span>
+      Stable
+     </span>
+     <b id="mStable">
+      &mdash;
+     </b>
+    </div>
+    <div class="metric">
+     <span>
+      Degraded
+     </span>
+     <b id="mBad">
+      &mdash;
+     </b>
+    </div>
+    <div class="metric">
+     <span>
+      Avg &Delta;%
+     </span>
+     <b id="mDelta">
+      &mdash;
+     </b>
+    </div>
+   </div>
+   <div class="card">
+    <h3>
+     Hourly Trend
+     <span class="status" id="trendDates" style="font-weight:400;margin-left:8px">
+     </span>
+    </h3>
+    <div class="chartbox">
+     <canvas id="trend">
+     </canvas>
+    </div>
+   </div>
+   <div class="two">
     <div class="card">
-      <h3>WPC Analyze — Worst Degradation <span class="status">(Cell Level)</span></h3>
-      <div class="wpc-dates"><span>Before: <b id="wpcBeforeDate">—</b></span><span>After: <b id="wpcAfterDate">—</b></span></div>
-      <div class="scroll"><table><thead><tr><th>Rank</th><th>NE Name</th><th>Band</th><th>Cell</th><th id="worstBeforeHead">Before</th><th id="worstAfterHead">After</th><th>Δ%</th></tr></thead><tbody id="worst"></tbody></table></div>
+     <h3>
+      WPC Analyze &mdash; Worst Degradation
+      <span class="status">
+       (Cell Level)
+      </span>
+     </h3>
+     <div class="wpc-dates">
+      <span>
+       Before:
+       <b id="wpcBeforeDate">
+        &mdash;
+       </b>
+      </span>
+      <span>
+       After:
+       <b id="wpcAfterDate">
+        &mdash;
+       </b>
+      </span>
+     </div>
+     <div class="scroll">
+      <table>
+       <thead>
+        <tr>
+         <th>
+          Rank
+         </th>
+         <th>
+          NE Name
+         </th>
+         <th>
+          Band
+         </th>
+         <th>
+          Cell
+         </th>
+         <th id="worstBeforeHead">
+          Before
+         </th>
+         <th id="worstAfterHead">
+          After
+         </th>
+         <th>
+          &Delta;%
+         </th>
+        </tr>
+       </thead>
+       <tbody id="worst">
+       </tbody>
+      </table>
+     </div>
     </div>
     <div class="card">
-      <h3>WPC Analyze — Best Improvement <span class="status">(Cell Level)</span></h3>
-      <div class="wpc-dates"><span>Before: <b id="wpcBeforeDate2">—</b></span><span>After: <b id="wpcAfterDate2">—</b></span></div>
-      <div class="scroll"><table><thead><tr><th>Rank</th><th>NE Name</th><th>Band</th><th>Cell</th><th id="bestBeforeHead">Before</th><th id="bestAfterHead">After</th><th>Δ%</th></tr></thead><tbody id="best"></tbody></table></div>
+     <h3>
+      WPC Analyze &mdash; Best Improvement
+      <span class="status">
+       (Cell Level)
+      </span>
+     </h3>
+     <div class="wpc-dates">
+      <span>
+       Before:
+       <b id="wpcBeforeDate2">
+        &mdash;
+       </b>
+      </span>
+      <span>
+       After:
+       <b id="wpcAfterDate2">
+        &mdash;
+       </b>
+      </span>
+     </div>
+     <div class="scroll">
+      <table>
+       <thead>
+        <tr>
+         <th>
+          Rank
+         </th>
+         <th>
+          NE Name
+         </th>
+         <th>
+          Band
+         </th>
+         <th>
+          Cell
+         </th>
+         <th id="bestBeforeHead">
+          Before
+         </th>
+         <th id="bestAfterHead">
+          After
+         </th>
+         <th>
+          &Delta;%
+         </th>
+        </tr>
+       </thead>
+       <tbody id="best">
+       </tbody>
+      </table>
+     </div>
     </div>
+   </div>
   </div>
-</div>
-
-<footer class="site-footer"><div class="footer-inner"><span>© Hans Dhika</span><span>Per Aspera Ad Astra.</span></div></footer>
-
-<script>
-document.getElementById('menuBtn')?.addEventListener('click',()=>document.getElementById('navlinks').classList.toggle('open'));
-document.querySelectorAll('#navlinks a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
+  <footer>
+   &copy;
+   <span id="year">
+   </span>
+   Hans Dhika &middot;
+   <em>
+    Per Aspera Ad Astra.
+   </em>
+  </footer>
+  <script>
+   const yearEl=document.getElementById('year'); if(yearEl) yearEl.textContent=new Date().getFullYear();
+   document.getElementById('menu')?.addEventListener('click',()=>document.getElementById('nav').classList.toggle('open'));
+document.querySelectorAll('#nav a').forEach(a=>a.addEventListener('click',()=>document.getElementById('nav').classList.remove('open')));
 const state={data:{}};
 let chart=null;
 
@@ -663,5 +1083,6 @@ window.addEventListener('error', e=>{
   if(s) s.textContent='JavaScript error: '+e.message;
   console.error(e.error||e.message);
 });
-</script>
-</body></html>
+  </script>
+ </body>
+</html>
