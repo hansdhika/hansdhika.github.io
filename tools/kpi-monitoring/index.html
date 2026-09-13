@@ -741,20 +741,36 @@ function parseDateValue(v){
   if(v instanceof Date && !isNaN(v)) return v;
   const s=clean(v);
   if(!s) return null;
-  // Excel serial date fallback
-  if(/^\d+(\.\d+)?$/.test(s)){
+
+  // Excel serial date. Use local calendar construction so Indonesia/WIB
+  // does not shift an Excel date back by one day.
+  if(/^\d+(?:\.\d+)?$/.test(s)){
     const n=Number(s);
     if(n>20000 && n<70000){
-      const whole=Math.floor(n), frac=n-whole;
+      const whole=Math.floor(n);
+      const frac=n-whole;
       const d=new Date(1899,11,30);
       d.setDate(d.getDate()+whole);
-      d.setMilliseconds(Math.round(frac*86400000));
+      if(frac) d.setMilliseconds(Math.round(frac*86400000));
       return d;
     }
   }
-  let d=new Date(s.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, '$3-$2-$1'));
-  if(!isNaN(d)) return d;
-  d=new Date(s);
+
+  // HTML/date-like values: normalize dd/mm/yyyy and yyyy-mm-dd safely.
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){
+    const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+    return isNaN(d)?null:d;
+  }
+
+  m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(m){
+    const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),
+                     Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
+    return isNaN(d)?null:d;
+  }
+
+  const d=new Date(s);
   return isNaN(d)?null:d;
 }
 function parseTimeValue(v){
@@ -1011,6 +1027,15 @@ function applyScopeFilter(r,cell,ne,level,site,scope,siteRows,datasetName){
   }
   return true;
 }
+function normalizeInputDate(v){
+  const s=clean(v);
+  if(!s)return '';
+  // HTML input[type=date] normally returns yyyy-mm-dd.
+  const m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  const d=parseDateValue(s);
+  return d?formatDateKey(d):'';
+}
 function formatDateKey(d){
   if(!d)return '';
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
@@ -1088,7 +1113,8 @@ function analyze(){
   const pair=metricPair(obj,metric);
   const cell=cellCol(obj.headers);if(!cell){alert('Cell/identity column not detected.');return}
   const ne=neCol(obj.headers);
-  const bd=document.getElementById('before').value,ad=document.getElementById('after').value;
+  const bd=normalizeInputDate(document.getElementById('before').value);
+  const ad=normalizeInputDate(document.getElementById('after').value);
   const hourEnabled=hasHourDimension(obj);
   updateHourControls(obj);
   const hs=hourEnabled?Number(document.getElementById('hstart').value.slice(0,2)):0;
@@ -1106,12 +1132,10 @@ function analyze(){
   const usePair=requestedAgg==='AUTO' && !!pair;
 
   const filtered=[];
-  // Date filter is inclusive: every date from Before Date through After Date.
-  // Hour filtering is only applied when the selected dataset actually has hourly granularity.
   obj.rows.forEach(r=>{
     const d=getRowDate(r,obj.headers);if(!d)return;
     const ds=formatDateKey(d),h=d.getHours();
-    if(ds<bd||ds>ad)return;
+    if(ds!==bd&&ds!==ad)return;
     if(hourEnabled && (h<hs||h>he))return;
     if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope,siteRows,name))return;
     const raw=clean(r[metric]);
@@ -1322,6 +1346,13 @@ document.getElementById('ssvFile').addEventListener('change',async e=>{
     document.getElementById('status').textContent=`SSV ${loaded.tech||''} loaded · ${['WD','BH','OPH'].filter(k=>flags[k]).join(' + ')}`;
   }catch(err){console.error(err);label.textContent='Load error';alert(`SSV workbook: ${err.message}`);}
 });
+
+function ssvDateRangeText(obj){
+  if(!obj||!obj.rows||!obj.rows.length)return '';
+  const dates=obj.rows.map(r=>getRowDate(r,obj.headers)).filter(Boolean).map(formatDateKey).sort();
+  if(!dates.length)return '';
+  return `${formatDateDisplay(dates[0])} → ${formatDateDisplay(dates[dates.length-1])}`;
+}
 
 function setTrendSourceInfo(){
   const ds=document.getElementById('dataset').value, auto=ds==='SSV OPH'?'OPH':ds==='SSV BH'?'BH':'WD';
