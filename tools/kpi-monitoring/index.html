@@ -28,6 +28,11 @@
 .kpi-page .kpi-hero .status{display:block!important;margin-top:8px}
 .kpi-page .wrap{display:block!important}
 @media(max-width:650px){.kpi-page .kpi-hero h1{font-size:34px!important}}
+
+.hour-filter.is-disabled{opacity:.52}
+.hour-filter.is-disabled input{background:#f7f7f5;cursor:not-allowed}
+.hour-filter-note{font-size:10px;color:#9ca3af;margin-top:4px}
+
 </style>
   <meta content="Hans Dhika portfolio and tools" name="description"/>
  </head>
@@ -77,7 +82,7 @@
      KPI Monitoring
     </h1>
     <div class="sub">
-     Hourly Before / After analysis for 4G &amp; 5G network KPI data.
+     Before / After analysis and trend monitoring for 4G &amp; 5G KPI data.
     </div>
     <div class="status" id="status" style="margin-top:8px">
      Waiting for files
@@ -287,16 +292,12 @@
      </div>
     </div>
     <div class="grid4" style="margin-top:10px">
-     <div>
-      <label>
-       Start Hour
-      </label>
+     <div class="hour-filter" id="startHourWrap">
+      <label id="startHourLabel">Start Hour</label>
       <input id="hstart" type="time" value="00:00"/>
      </div>
-     <div>
-      <label>
-       End Hour
-      </label>
+     <div class="hour-filter" id="endHourWrap">
+      <label id="endHourLabel">End Hour</label>
       <input id="hend" type="time" value="23:00"/>
      </div>
      <div>
@@ -477,7 +478,7 @@
    </div>
    <div class="card">
     <h3>
-     Hourly Trend
+     Trend Analysis
      <span class="status" id="trendDates" style="font-weight:400;margin-left:8px">
      </span>
     </h3>
@@ -918,6 +919,7 @@ function updateMetricBand(){
   sel.innerHTML=ms.length?ms.map(x=>`<option>${x.replaceAll('<','&lt;')}</option>`).join(''):'<option value="">No numeric metric found</option>';
   document.getElementById('aggregation').value='AUTO';
   setDates(obj);
+  updateHourControls(obj);
   updateScopeSelect();
 }
 function neCol(headers){return headers.find(c=>/^ne name$/i.test(c)) || headers.find(c=>/^eNodeB Name$/i.test(c)) || headers.find(c=>/^gNodeB Name$/i.test(c)) || headers.find(c=>/\(4G eNodeB FDD\)MSC/i.test(c)) || headers.find(c=>/^Tower$/i.test(c)) || headers.find(c=>/^Tower Name$/i.test(c)) || ''}
@@ -1023,6 +1025,53 @@ function aggregateValues(values, mode, pairTotals){
   if(mode==='COUNT')return values.length;
   return values.reduce((a,b)=>a+b,0)/values.length;
 }
+
+function hasHourDimension(obj){
+  if(!obj || !obj.headers) return false;
+  const headers=obj.headers;
+  const timeCol=headers.find(c=>/^time$/i.test(c)) ||
+                headers.find(c=>/^timestamp$/i.test(c)) ||
+                headers.find(c=>/date[ _-]?time|time.*date|date.*time/i.test(c));
+  if(!timeCol) return false;
+
+  // A Date-only dataset must not be treated as hourly just because the
+  // parser can represent the date as 00:00.
+  const samples=obj.rows.map(r=>r[timeCol]).filter(v=>clean(v)!=='').slice(0,500);
+  const buckets=new Set();
+
+  for(const v of samples){
+    const t=parseTimeValue(v);
+    if(t) buckets.add(`${t.h}:${t.m}`);
+    else{
+      const d=parseDateValue(v);
+      if(d && (d.getHours()!==0 || d.getMinutes()!==0 || d.getSeconds()!==0)){
+        buckets.add(`${d.getHours()}:${d.getMinutes()}`);
+      }
+    }
+    if(buckets.size>1) return true;
+  }
+  return buckets.size>0 && [...buckets][0] !== '0:0';
+}
+
+function updateHourControls(obj){
+  const enabled=hasHourDimension(obj);
+  const sw=document.getElementById('startHourWrap');
+  const ew=document.getElementById('endHourWrap');
+  const hs=document.getElementById('hstart');
+  const he=document.getElementById('hend');
+  if(!sw || !ew || !hs || !he) return enabled;
+
+  [sw,ew].forEach(w=>w.classList.toggle('is-disabled',!enabled));
+  [hs,he].forEach(x=>x.disabled=!enabled);
+
+  const sl=document.getElementById('startHourLabel');
+  const el=document.getElementById('endHourLabel');
+  if(sl) sl.textContent=enabled?'Start Hour':'Start Hour (N/A)';
+  if(el) el.textContent=enabled?'End Hour':'End Hour (N/A)';
+
+  return enabled;
+}
+
 function analyze(){
   const name=document.getElementById('dataset').value,obj=getDataset(name);
   if(!name){alert('Upload at least one dataset first.');return}
@@ -1034,7 +1083,10 @@ function analyze(){
   const cell=cellCol(obj.headers);if(!cell){alert('Cell/identity column not detected.');return}
   const ne=neCol(obj.headers);
   const bd=document.getElementById('before').value,ad=document.getElementById('after').value;
-  const hs=Number(document.getElementById('hstart').value.slice(0,2)), he=Number(document.getElementById('hend').value.slice(0,2));
+  const hourEnabled=hasHourDimension(obj);
+  updateHourControls(obj);
+  const hs=hourEnabled?Number(document.getElementById('hstart').value.slice(0,2)):0;
+  const he=hourEnabled?Number(document.getElementById('hend').value.slice(0,2)):23;
   const level=document.getElementById('level').value;
   const site=document.getElementById('siteSelect').value;
   const scopeValues=[...document.getElementById('scopeSelect').selectedOptions].map(o=>o.value);
@@ -1052,7 +1104,7 @@ function analyze(){
     const d=getRowDate(r,obj.headers);if(!d)return;
     const ds=formatDateKey(d),h=d.getHours();
     if(ds!==bd&&ds!==ad)return;
-    if(h<hs||h>he)return;
+    if(hourEnabled && (h<hs||h>he))return;
     if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope,siteRows,name))return;
     const raw=clean(r[metric]);
     const v=Number(String(raw).replace(/,/g,''));
@@ -1067,7 +1119,7 @@ function analyze(){
     filtered.push({r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'')||'—',band:bandFromRow(r,obj.headers),v:hasValue?v:null,num,den});
   });
 
-  if(!filtered.length){alert('No rows match the selected dates, hours and scope.');return}
+  if(!filtered.length){alert(hourEnabled?'No rows match the selected dates, hours and scope.':'No rows match the selected dates and scope.');return}
 
   // WPC: aggregate each selected scope entity across the chosen date/hour window.
   const groups=new Map();
@@ -1121,13 +1173,14 @@ function analyze(){
     if(datasetReady(`SSV ${chosen}`)) trendName=`SSV ${chosen}`;
   }
   const trendObj=getDataset(trendName)||obj;
+  const trendHourEnabled=hasHourDimension(trendObj);
   const trendStart=bd<ad?bd:ad, trendEnd=bd>ad?bd:ad;
-  const inTrendRange = x => x.ds>=trendStart && x.ds<=trendEnd && x.h>=hs && x.h<=he;
+  const inTrendRange = x => x.ds>=trendStart && x.ds<=trendEnd && (!trendHourEnabled || (x.h>=hs && x.h<=he));
   const trendFiltered=filtered.concat(
     trendObj.rows.map(r=>{
       const d=getRowDate(r,trendObj.headers); if(!d)return null;
       const ds=formatDateKey(d),h=d.getHours();
-      if(ds<trendStart||ds>trendEnd||h<hs||h>he)return null;
+      if(ds<trendStart||ds>trendEnd||(trendHourEnabled && (h<hs||h>he)))return null;
       if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope,siteRows,trendName))return null;
       const raw=clean(r[metric]);
       const v=Number(String(raw).replace(/,/g,''));
@@ -1273,7 +1326,7 @@ function setTrendSourceInfo(){
 
 document.getElementById('trendLevel').addEventListener('change',()=>{ document.getElementById('trendInfo').textContent=`Trend grouping: ${document.getElementById('trendLevel').value==='SITE'?'Site total':document.getElementById('trendLevel').value==='BAND'?'Band':document.getElementById('trendLevel').value==='SECTORAL'?'Sectoral':'Cell'}`; });
 
-document.getElementById('dataset').addEventListener('change',()=>{updateMetricBand();setTrendSourceInfo();});
+document.getElementById('dataset').addEventListener('change',()=>{updateMetricBand();setTrendSourceInfo();updateHourControls(getDataset(document.getElementById('dataset').value));});
 document.getElementById('trendSource').addEventListener('change',setTrendSourceInfo);
 document.getElementById('level').addEventListener('change',()=>{updateScopeSelect();});
 document.getElementById('siteSelect').addEventListener('change',()=>{updateScopeSelect();});
@@ -1285,6 +1338,7 @@ document.getElementById('metric').addEventListener('change',()=>{const obj=getDa
 document.getElementById('analyze').addEventListener('click',analyze);
 renderDatasetStatus();
 setTrendSourceInfo();
+updateHourControls(getDataset(document.getElementById('dataset').value));
 window.addEventListener('error', e=>{
   const s=document.getElementById('status');
   if(s) s.textContent='JavaScript error: '+e.message;

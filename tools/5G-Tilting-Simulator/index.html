@@ -17,10 +17,56 @@ label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px}input,sel
 .status{padding:9px;border-radius:8px;background:#f1f5f9;font-size:11px;margin-top:8px}.status.ok{background:#ecfdf3;color:var(--green)}.status.bad{background:#fef2f2;color:var(--red)}
 .note{font-size:10px;line-height:1.45;color:var(--muted)}.recommend{padding:10px;background:#f8fafc;border:1px solid var(--line);border-radius:9px;font-size:11px}.recommend strong{font-size:20px;color:var(--blue)}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.views{grid-template-columns:1fr}}@media(max-width:700px){.stats{grid-template-columns:1fr 1fr 1fr}.row4{grid-template-columns:1fr 1fr}.info{grid-template-columns:1fr}}
+
+/* Standard portfolio header for the simulator */
+.site-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 20px}
+.site-header-inner{max-width:1500px;margin:auto;min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.site-logo{font-size:24px;font-weight:800;letter-spacing:-1px;color:#2563eb;text-decoration:none}
+.site-nav{display:flex;align-items:center;gap:28px}
+.site-nav>a,.site-tools-toggle{font:inherit;font-size:14px;color:#596273;text-decoration:none;background:transparent;border:0;padding:8px 0;cursor:pointer;font-weight:500}
+.site-nav>a:hover,.site-tools-toggle:hover,.site-tools.open .site-tools-toggle{color:#2563eb}
+.site-tools{position:relative}
+.site-tools-toggle{display:flex;align-items:center;gap:5px}
+.site-tools-toggle span{font-size:12px;line-height:1}
+.site-tools-menu{position:absolute;right:-12px;top:calc(100% + 7px);min-width:225px;padding:7px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 14px 30px rgba(15,23,42,.12);display:none;z-index:100}
+.site-tools.open .site-tools-menu,.site-tools:focus-within .site-tools-menu{display:block}
+.site-tools-menu a{display:block!important;padding:9px 11px;border-radius:7px;color:#596273!important;text-decoration:none;font-size:13px!important;white-space:nowrap}
+.site-tools-menu a:hover,.site-tools-menu a.active{background:#f4f7fb;color:#2563eb!important}
+.sim-title-wrap{max-width:1500px;margin:auto;padding:15px 0 0}
+.sim-title-wrap h1{margin:0;font-size:24px;color:#17336f}
+.sim-title-wrap p{margin:3px 0 0;color:#68748a;font-size:12px}
+@media(max-width:700px){.site-header{padding:0 14px}.site-header-inner{min-height:58px;align-items:flex-start;padding:13px 0}.site-nav{gap:14px;flex-wrap:wrap;justify-content:flex-end}.site-nav>a{font-size:12px}.site-tools-menu{right:0}.sim-title-wrap{padding:10px 0 0}.sim-title-wrap h1{font-size:20px}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>NRDUCellTrpBeam Simulator</h1><p>Multi-TRP • Multi-Sector • Multi-UE • Tilt & Coverage Analysis</p></div></header>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-logo" href="/">HD.</a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="/">Home</a>
+      <div class="site-tools">
+        <button class="site-tools-toggle" type="button" aria-expanded="false" aria-haspopup="true">Tools <span>⌄</span></button>
+        <div class="site-tools-menu" role="menu">
+          <a href="/tools/" role="menuitem">All Tools</a>
+          <a href="/tools/kpi-monitoring/" role="menuitem">KPI Monitoring</a>
+          <a href="/tools/kpi-analytics.html" role="menuitem">KPI Analytics</a>
+          <a href="/tools/5g-report-automation.html" role="menuitem">5G Report Automation</a>
+          <a href="/tools/excel-csv-processor.html" role="menuitem">Excel / CSV Processor</a>
+          <a href="/tools/mml-parser/" role="menuitem">MML Parser</a>
+          <a href="/tools/mml-creator/" role="menuitem">MML Creator</a>
+          <a class="active" href="/tools/5G-Tilting-Simulator/" role="menuitem">5G Tilting Simulator</a>
+        </div>
+      </div>
+      <a href="/projects/">Projects</a>
+      <a href="/about/">About</a>
+      <a href="/contact/">Contact</a>
+    </nav>
+  </div>
+  <div class="sim-title-wrap">
+    <h1>NRDUCellTrpBeam Simulator</h1>
+    <p>Multi-TRP • Multi-Sector • Multi-UE • Tilt & Coverage Analysis</p>
+  </div>
+</header>
 <main><div class="layout">
 <div class="left">
 <section class="card"><h2>▣ MML Input</h2>
@@ -212,5 +258,15 @@ $('addtrp').onclick=addTRP;
 $('deltrp').onclick=deleteTRP;
 parseMML();
 ues=[{name:'UE-01',d:700,az:10,h:1.5},{name:'UE-02',d:900,az:50,h:1.5},{name:'UE-03',d:1200,az:130,h:1.5},{name:'UE-04',d:800,az:310,h:1.5},{name:'UE-05',d:1600,az:160,h:1.5},{name:'UE-06',d:1400,az:250,h:1.5}];selUE=0;render();
+</script>
+
+<script>
+(() => {
+  const tools=document.querySelector('.site-tools');
+  const toggle=document.querySelector('.site-tools-toggle');
+  if(!tools||!toggle)return;
+  toggle.addEventListener('click',e=>{e.stopPropagation();const open=tools.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));});
+  document.addEventListener('click',e=>{if(!tools.contains(e.target)){tools.classList.remove('open');toggle.setAttribute('aria-expanded','false');}});
+})();
 </script>
 </body></html>
