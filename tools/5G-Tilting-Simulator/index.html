@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NRDUCellTrpBeam Simulator V6</title>
+<title>5G Tilting Simulator</title>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--text:#16213a;--muted:#68748a;--line:#dce3ee;--blue:#2563eb;--green:#15803d;--red:#dc2626;--amber:#b7791f}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
@@ -61,10 +61,6 @@ label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px}input,sel
       <a href="/about/">About</a>
       <a href="/contact/">Contact</a>
     </nav>
-  </div>
-  <div class="sim-title-wrap">
-    <h1>NRDUCellTrpBeam Simulator</h1>
-    <p>Multi-TRP • Multi-Sector • Multi-UE • Tilt & Coverage Analysis</p>
   </div>
 </header>
 <main><div class="layout">
@@ -268,5 +264,8 @@ ues=[{name:'UE-01',d:700,az:10,h:1.5},{name:'UE-02',d:900,az:50,h:1.5},{name:'UE
   toggle.addEventListener('click',e=>{e.stopPropagation();const open=tools.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));});
   document.addEventListener('click',e=>{if(!tools.contains(e.target)){tools.classList.remove('open');toggle.setAttribute('aria-expanded','false');}});
 })();
+</script>
+<script>
+document.querySelectorAll('.site-tools-toggle').forEach(function(btn){btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var w=btn.closest('.site-tools');var o=w.classList.toggle('open');btn.setAttribute('aria-expanded',o?'true':'false')})});document.addEventListener('click',function(e){document.querySelectorAll('.site-tools.open').forEach(function(w){if(!w.contains(e.target)){w.classList.remove('open');var b=w.querySelector('.site-tools-toggle');if(b)b.setAttribute('aria-expanded','false')}})});
 </script>
 </body></html>
