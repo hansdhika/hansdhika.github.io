@@ -654,7 +654,7 @@ async function loadFile(file){
 }
 async function loadSSVWorkbook(file){
   const buf=await file.arrayBuffer();
-  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const wb=XLSX.read(buf,{type:'array',cellDates:false});
   const out={BH:[],WD:[],OPH:[],sheets:{},tech:''};
   wb.SheetNames.forEach(sheetName=>{
     const obj=norm(XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:''}));
@@ -738,39 +738,22 @@ function sectorFromCell(cell, siteRows, datasetName){
   return 'UNKNOWN';
 }
 function parseDateValue(v){
-  if(v instanceof Date && !isNaN(v)) return v;
+  if(v instanceof Date && !isNaN(v)){
+    // Spreadsheet libraries may expose an Excel date as a UTC-midnight
+    // Date object. Read its calendar fields in UTC to preserve the sheet date.
+    return new Date(v.getUTCFullYear(),v.getUTCMonth(),v.getUTCDate(),
+                    v.getUTCHours(),v.getUTCMinutes(),v.getUTCSeconds(),v.getUTCMilliseconds());
+  }
   const s=clean(v);
   if(!s) return null;
-
-  // Excel serial date. Use local calendar construction so Indonesia/WIB
-  // does not shift an Excel date back by one day.
-  if(/^\d+(?:\.\d+)?$/.test(s)){
+  // Excel serial date fallback
+  if(/^\d+(\\.\d+)?$/.test(s)){
     const n=Number(s);
-    if(n>20000 && n<70000){
-      const whole=Math.floor(n);
-      const frac=n-whole;
-      const d=new Date(1899,11,30);
-      d.setDate(d.getDate()+whole);
-      if(frac) d.setMilliseconds(Math.round(frac*86400000));
-      return d;
-    }
+    if(n>20000 && n<70000) return new Date(Date.UTC(1899,11,30)+n*86400000);
   }
-
-  // HTML/date-like values: normalize dd/mm/yyyy and yyyy-mm-dd safely.
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m){
-    const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
-    return isNaN(d)?null:d;
-  }
-
-  m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-  if(m){
-    const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),
-                     Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
-    return isNaN(d)?null:d;
-  }
-
-  const d=new Date(s);
+  let d=new Date(s.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, '$3-$2-$1'));
+  if(!isNaN(d)) return d;
+  d=new Date(s);
   return isNaN(d)?null:d;
 }
 function parseTimeValue(v){
@@ -926,7 +909,7 @@ function setDates(obj){
   if(!obj)return;
   const ds=obj.rows.map(r=>getRowDate(r,obj.headers)).filter(Boolean).sort((a,b)=>a-b);
   if(!ds.length)return;
-  const min=ds[0].toISOString().slice(0,10),max=ds.at(-1).toISOString().slice(0,10);
+  const min=formatDateKey(ds[0]),max=formatDateKey(ds.at(-1));
   document.getElementById('before').value=min;
   document.getElementById('after').value=max;
 }
@@ -1000,6 +983,10 @@ function updateScopeSelect(){
   }
 
   let info=site?`Site: ${site}`:'Select a site';
+  if(obj && document.querySelector('input[name="sourceMode"]:checked')?.value==='SSV'){
+    const ds=obj.rows.map(r=>getRowDate(r,obj.headers)).filter(Boolean).sort((a,b)=>a-b);
+    if(ds.length) info += ` · Data: ${formatDateDisplay(formatDateKey(ds[0]))} → ${formatDateDisplay(formatDateKey(ds.at(-1)))}`;
+  }
   if(level==='SITE') info += ' · Analysis: selected site';
   else {
     const sv=[...scopeSel.selectedOptions].map(o=>o.value);
@@ -1026,15 +1013,6 @@ function applyScopeFilter(r,cell,ne,level,site,scope,siteRows,datasetName){
     if(scope && scope!=='ALL' && sector!==scope)return false;
   }
   return true;
-}
-function normalizeInputDate(v){
-  const s=clean(v);
-  if(!s)return '';
-  // HTML input[type=date] normally returns yyyy-mm-dd.
-  const m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if(m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
-  const d=parseDateValue(s);
-  return d?formatDateKey(d):'';
 }
 function formatDateKey(d){
   if(!d)return '';
@@ -1113,8 +1091,7 @@ function analyze(){
   const pair=metricPair(obj,metric);
   const cell=cellCol(obj.headers);if(!cell){alert('Cell/identity column not detected.');return}
   const ne=neCol(obj.headers);
-  const bd=normalizeInputDate(document.getElementById('before').value);
-  const ad=normalizeInputDate(document.getElementById('after').value);
+  const bd=document.getElementById('before').value,ad=document.getElementById('after').value;
   const hourEnabled=hasHourDimension(obj);
   updateHourControls(obj);
   const hs=hourEnabled?Number(document.getElementById('hstart').value.slice(0,2)):0;
@@ -1346,13 +1323,6 @@ document.getElementById('ssvFile').addEventListener('change',async e=>{
     document.getElementById('status').textContent=`SSV ${loaded.tech||''} loaded · ${['WD','BH','OPH'].filter(k=>flags[k]).join(' + ')}`;
   }catch(err){console.error(err);label.textContent='Load error';alert(`SSV workbook: ${err.message}`);}
 });
-
-function ssvDateRangeText(obj){
-  if(!obj||!obj.rows||!obj.rows.length)return '';
-  const dates=obj.rows.map(r=>getRowDate(r,obj.headers)).filter(Boolean).map(formatDateKey).sort();
-  if(!dates.length)return '';
-  return `${formatDateDisplay(dates[0])} → ${formatDateDisplay(dates[dates.length-1])}`;
-}
 
 function setTrendSourceInfo(){
   const ds=document.getElementById('dataset').value, auto=ds==='SSV OPH'?'OPH':ds==='SSV BH'?'BH':'WD';
