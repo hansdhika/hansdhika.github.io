@@ -742,9 +742,15 @@ function parseDateValue(v){
   const s=clean(v);
   if(!s) return null;
   // Excel serial date fallback
-  if(/^\d+(\\.\d+)?$/.test(s)){
+  if(/^\d+(\.\d+)?$/.test(s)){
     const n=Number(s);
-    if(n>20000 && n<70000) return new Date(Date.UTC(1899,11,30)+n*86400000);
+    if(n>20000 && n<70000){
+      const whole=Math.floor(n), frac=n-whole;
+      const d=new Date(1899,11,30);
+      d.setDate(d.getDate()+whole);
+      d.setMilliseconds(Math.round(frac*86400000));
+      return d;
+    }
   }
   let d=new Date(s.replace(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, '$3-$2-$1'));
   if(!isNaN(d)) return d;
@@ -1100,10 +1106,12 @@ function analyze(){
   const usePair=requestedAgg==='AUTO' && !!pair;
 
   const filtered=[];
+  // Date filter is inclusive: every date from Before Date through After Date.
+  // Hour filtering is only applied when the selected dataset actually has hourly granularity.
   obj.rows.forEach(r=>{
     const d=getRowDate(r,obj.headers);if(!d)return;
     const ds=formatDateKey(d),h=d.getHours();
-    if(ds!==bd&&ds!==ad)return;
+    if(ds<bd||ds>ad)return;
     if(hourEnabled && (h<hs||h>he))return;
     if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope,siteRows,name))return;
     const raw=clean(r[metric]);
