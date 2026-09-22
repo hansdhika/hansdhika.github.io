@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>5G NR PCI Conflict Analyzer</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#dfe4ec;--accent:#b40016;--accent2:#0b63ce;--ok:#137333;--warn:#a15c00;--shadow:0 8px 30px rgba(20,30,50,.08)}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#111827,#273449);color:#fff;padding:28px 20px}header .wrap{max-width:1250px;margin:auto}h1{margin:0 0 7px;font-size:28px}header p{margin:0;color:#d5dbea}.badge{display:inline-block;margin-top:13px;padding:6px 10px;border:1px solid #ffffff33;border-radius:999px;font-size:12px}
+main{max-width:1250px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:380px 1fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}.card h2{font-size:17px;margin:0 0 14px}.help{color:var(--muted);font-size:13px;line-height:1.55}.step{display:flex;gap:10px;margin:14px 0}.num{min-width:26px;height:26px;border-radius:50%;background:#eef2f7;display:grid;place-items:center;font-weight:700;font-size:12px}.step b{display:block;margin-bottom:3px}
+label{font-size:12px;font-weight:700;color:#475467;display:block;margin:11px 0 5px}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;background:#fff;color:var(--text)}textarea{min-height:110px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:8px;padding:10px 13px;font-weight:700;cursor:pointer}button.primary{background:var(--accent);color:#fff}button.secondary{background:#edf2f7;color:#25324a}button.blue{background:var(--accent2);color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{border:1px solid var(--line);border-radius:10px;padding:13px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{font-size:20px;display:block;margin-top:4px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;min-width:1050px;font-size:12px}th,td{padding:9px 10px;border-bottom:1px solid #edf0f4;text-align:left;white-space:nowrap}th{background:#f8fafc;color:#475467;position:sticky;top:0}tr.selected{background:#fff6f6}.pill{padding:3px 7px;border-radius:999px;background:#f1f5f9}.far{font-weight:800;color:var(--accent)}
+.command{margin-top:14px;background:#111827;color:#e5e7eb;border-radius:10px;padding:15px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;overflow:auto}.command .hl{color:#fff;font-weight:800}.note{margin-top:10px;padding:10px 12px;background:#fff8e7;border:1px solid #f3d58a;border-radius:9px;color:#76520b;font-size:12px;line-height:1.5}.success{background:#edf9f0;border-color:#b7e1c0;color:#17652b}
+footer{max-width:1250px;margin:0 auto;padding:10px 16px 35px;color:var(--muted);font-size:12px}@media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>5G NR PCI Conflict Analyzer</h1><p>Analyze NRCELLPCICONFLICT → calculate Source/Target distance → identify the farthest relation → generate RMV NRCELLRELATION command.</p><span class="badge">Huawei NR • GitHub Pages • Excel-Compatible Distance</span></div></header>
+<main>
+<div class="grid">
+<section class="card">
+<h2>How To</h2>
+<div class="step"><div class="num">1</div><div><b>Get conflict data</b><span class="help">From DSP <code>NRCELLPCICONFLICT</code>, identify the affected gNodeB / target relations.</span></div></div>
+<div class="step"><div class="num">2</div><div><b>Prepare coordinates</b><span class="help">Enter Source and Target longitude/latitude. Distance uses the same Spherical Law of Cosines formula as the Excel workbook.</span></div></div>
+<div class="step"><div class="num">3</div><div><b>Find the farthest relation</b><span class="help">The table is sorted by distance descending. The farthest row is the <b>recommended candidate for review</b>; it is not automatically approved for removal.</span></div></div>
+<div class="step"><div class="num">4</div><div><b>Generate the MML</b><span class="help">Fill MCC, MNC, Source NRCELLID and Target CELLID, then copy the generated command.</span></div></div>
+<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+<h2>Relation Input</h2>
+<div class="row"><div><label>Source gNodeB ID</label><input id="sgnb" placeholder="600173"></div><div><label>Target gNodeB ID</label><input id="tgnb" placeholder="602369"></div></div>
+<div class="row"><div><label>Source NR Cell ID</label><input id="srcCell" placeholder="562"></div><div><label>Target Cell ID</label><input id="tgtCell" placeholder="563"></div></div>
+<div class="row"><div><label>Source Longitude</label><input id="slon" type="number" step="any" placeholder="115.251"></div><div><label>Source Latitude</label><input id="slat" type="number" step="any" placeholder="-8.6989"></div></div>
+<div class="row"><div><label>Target Longitude</label><input id="tlon" type="number" step="any" placeholder="115.302"></div><div><label>Target Latitude</label><input id="tlat" type="number" step="any" placeholder="-8.4839"></div></div>
+<div class="row"><div><label>MCC</label><input id="mcc" value="510"></div><div><label>MNC</label><input id="mnc" value="11"></div></div>
+<div class="buttons"><button class="primary" onclick="addRelation()">Add Relation</button><button class="secondary" onclick="loadExample()">Load Example</button><button class="secondary" onclick="reviewFarthest()">Review Farthest</button><button class="secondary" onclick="clearAll()">Clear</button></div>
+<div class="note">Distance is calculated in kilometers internally. The original how-to slide labels the column “Distance (m)”, while its sample values (24.5493, 0.99885, 0.97902) correspond approximately to <b>km</b>, not meters.</div>
+</section>
+<section>
+<div class="stats"><div class="stat"><small>Relations</small><strong id="count">0</strong></div><div class="stat"><small>Farthest</small><strong id="far">—</strong></div><div class="stat"><small>Nearest</small><strong id="near">—</strong></div><div class="stat"><small>Selected</small><strong id="selected">—</strong></div></div>
+<div class="card">
+<h2>Conflict Relations</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Source gNodeB</th><th>Source Cell</th><th>Target gNodeB</th><th>Target Cell</th><th>Source Long,Lat</th><th>Target Long,Lat</th><th>Distance (km)</th><th>Distance (m)</th><th>Review</th></tr></thead><tbody id="tbody"><tr><td colspan="10" style="text-align:center;color:#667085;padding:28px">No relation yet.</td></tr></tbody></table></div>
+<div id="commandBox" style="display:none"><h2 style="margin-top:18px">Generated MML</h2><div class="command" id="command"></div><div class="buttons"><button class="blue" onclick="copyCommand()">Copy Command</button></div><div class="note success">Workflow: verify the farthest relation against the network configuration before executing the RMV command. This tool only generates the command; it does not execute it.</div></div>
+</div>
+</section>
+</div>
+</main>
+<footer>5G NR PCI Conflict Analyzer • Client-side only • No data is uploaded to a server.</footer>
+<script>
+const rows=[]; let selectedIndex=-1;
+function distanceKm(lat1,lon1,lat2,lon2){const R=6371,toRad=x=>x*Math.PI/180;return R*Math.acos(Math.cos(toRad(90-lat1))*Math.cos(toRad(90-lat2))+Math.sin(toRad(90-lat1))*Math.sin(toRad(90-lat2))*Math.cos(toRad(lon1-lon2)));}
+function v(id){return document.getElementById(id).value.trim()}
+function addRelation(){const data={sgnb:v('sgnb'),tgnb:v('tgnb'),srcCell:v('srcCell'),tgtCell:v('tgtCell'),slon:+v('slon'),slat:+v('slat'),tlon:+v('tlon'),tlat:+v('tlat'),mcc:v('mcc')||'510',mnc:v('mnc')||'11'};if(!data.sgnb||!data.tgnb||!data.srcCell||!data.tgtCell||![data.slon,data.slat,data.tlon,data.tlat].every(Number.isFinite)){alert('Lengkapi semua field relation.');return}data.distance=distanceKm(data.slat,data.slon,data.tlat,data.tlon);rows.push(data);render()}
+function reviewFarthest(){if(!rows.length){alert('Belum ada relation.');return}let farthest=0;for(let i=1;i<rows.length;i++)if(rows[i].distance>rows[farthest].distance)farthest=i;selectRow(farthest)}
+function render(){const tb=document.getElementById('tbody');const sorted=rows.map((r,i)=>({...r,_i:i})).sort((a,b)=>b.distance-a.distance);document.getElementById('count').textContent=rows.length;if(!rows.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:#667085;padding:28px">No relation yet.</td></tr>';document.getElementById('far').textContent='—';document.getElementById('near').textContent='—';document.getElementById('selected').textContent='—';document.getElementById('commandBox').style.display='none';return}document.getElementById('far').textContent=sorted[0].distance.toFixed(3)+' km';document.getElementById('near').textContent=sorted[sorted.length-1].distance.toFixed(3)+' km';tb.innerHTML=sorted.map((r,n)=>`<tr class="${r._i===selectedIndex?'selected':''}"><td>${n+1}</td><td>${esc(r.sgnb)}</td><td>${esc(r.srcCell)}</td><td>${esc(r.tgnb)}</td><td>${esc(r.tgtCell)}</td><td>${r.slon}, ${r.slat}</td><td>${r.tlon}, ${r.tlat}</td><td class="${n===0?'far':''}">${r.distance.toFixed(5)}</td><td>${(r.distance*1000).toFixed(2)}</td><td>${n===0?'<span class="pill far">Recommended</span>':''} <button class="secondary" onclick="selectRow(${r._i})">Review</button></td></tr>`).join('');updateCommand()}
+function selectRow(i){selectedIndex=i;render();const r=rows[i];if(r)document.getElementById('selected').textContent=r.distance.toFixed(3)+' km'}
+function updateCommand(){if(selectedIndex<0||!rows[selectedIndex]){document.getElementById('commandBox').style.display='none';return}const r=rows[selectedIndex];const cmd=`RMV NRCELLRELATION:NRCELLID=${r.srcCell},MCC="${r.mcc}",MNC="${r.mnc}",GNBID=${r.tgnb},CELLID=${r.tgtCell};`;document.getElementById('command').innerHTML='<span class="hl">'+esc(cmd)+'</span>';document.getElementById('commandBox').style.display='block'}
+function copyCommand(){const r=rows[selectedIndex];if(!r)return;navigator.clipboard.writeText(`RMV NRCELLRELATION:NRCELLID=${r.srcCell},MCC="${r.mcc}",MNC="${r.mnc}",GNBID=${r.tgnb},CELLID=${r.tgtCell};`).then(()=>alert('Command copied.')).catch(()=>alert('Copy gagal, silakan copy manual.'))}
+function loadExample(){clearAll();[['600173','602369','562','563',115.251,-8.6989,115.302,-8.4839],['600173','600255','562','531',115.251,-8.6989,115.256,-8.691],['600173','600172','562','533',115.251,-8.6989,115.251,-8.6901]].forEach(x=>{document.getElementById('sgnb').value=x[0];document.getElementById('tgnb').value=x[1];document.getElementById('srcCell').value=x[2];document.getElementById('tgtCell').value=x[3];document.getElementById('slon').value=x[4];document.getElementById('slat').value=x[5];document.getElementById('tlon').value=x[6];document.getElementById('tlat').value=x[7];addRelation()});reviewFarthest()}
+function clearAll(){rows.length=0;selectedIndex=-1;render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+</script>
+</body>
+</html>
