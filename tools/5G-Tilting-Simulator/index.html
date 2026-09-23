@@ -143,7 +143,7 @@ Recommended Tilt (integer): <strong id="rec">—</strong>
 </div></div></main>
 <script>
 const $=id=>document.getElementById(id), n=(x,d)=>Number.isFinite(parseFloat(x))?parseFloat(x):d;
-const presets={DEFAULT:[65,6],SCENARIO_1:[110,6],SCENARIO_2:[90,6],SCENARIO_3:[65,6],SCENARIO_4:[45,6],SCENARIO_5:[25,6],SCENARIO_6:[110,12],SCENARIO_7:[90,12],SCENARIO_8:[65,12],SCENARIO_9:[45,12],SCENARIO_10:[25,12],SCENARIO_11:[15,12],SCENARIO_12:[110,25],SCENARIO_13:[90,25],SCENARIO_14:[65,25],SCENARIO_15:[45,25],SCENARIO_16:[25,25],CUSTOMIZED_BEAM_SCENARIO:[65,6]};
+const presets={DEFAULT:[105,6],SCENARIO_1:[110,6],SCENARIO_2:[90,6],SCENARIO_3:[65,6],SCENARIO_4:[45,6],SCENARIO_5:[25,6],SCENARIO_6:[110,12],SCENARIO_7:[90,12],SCENARIO_8:[65,12],SCENARIO_9:[45,12],SCENARIO_10:[25,12],SCENARIO_11:[15,12],SCENARIO_12:[110,25],SCENARIO_13:[90,25],SCENARIO_14:[65,25],SCENARIO_15:[45,25],SCENARIO_16:[25,25],CUSTOMIZED_BEAM_SCENARIO:[65,6]};
 let trps=[],ues=[],selTRP=0,selUE=0;
 const scenarios=Object.keys(presets);
 function parseMML(){let chunks=$('mml').value.split(/(?=MOD\s+NRDUCELLTRPBEAM)/i),a=[];chunks.forEach((s,i)=>{if(!/NRDUCELLTRPBEAM/i.test(s))return;let get=(names,d)=>{for(let k of names){let r=new RegExp(k+'\\s*=\\s*([A-Za-z0-9_.+-]+)','i').exec(s);if(r)return r[1]}return d};a.push({id:get(['NRDUCELLTRPID','NRDUCELLTRPBEAMID'],String(i)),az:n(get(['BEAMAZIMUTH','AZIMUTH'],'0'),0),tilt:Math.round(Math.abs(n(get(['BEAMELEVATION','ELEVATION','TILT'],'6'),6))),sc:(get(['COVERAGESCENARIO','COVERAGE_SCENARIO'],'SCENARIO_3')).toUpperCase()})});if(!a.length){setStatus('No NRDUCELLTRPBEAM found.',false);return}trps=a;selTRP=0;render();setStatus('Parsed '+a.length+' TRP(s).',true)}
