@@ -40,8 +40,8 @@
 .pci-bad{color:#c53b3b;font-weight:700}
 .pci-star{font-weight:800;color:#b77900}
 .pci-group{border:1px solid #dfe4eb;border-radius:9px;margin:12px 0;overflow:hidden}
-.pci-ghead{padding:13px 15px;background:#f7f8fa;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.pci-notice{padding:11px;border-radius:7px;background:#f4f7fb;color:#596273;font-size:13px;margin:12px 14px}
+.pci-ghead{padding:13px 15px;background:#f7f8fa;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+.pci-notice{padding:11px 13px;border-radius:7px;background:#f4f7fb;color:#596273;font-size:13px;margin:12px 14px;line-height:1.55}
 .pci-error{background:#fff3f3;border-color:#efcaca;color:#a32e2e}
 .pci-command-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .pci-cmdbox{position:relative}
@@ -115,7 +115,7 @@
         <div class="pci-stat"><div class="pci-num" id="sFar">0</div><div class="pci-lbl">Farthest Selected</div></div>
         <div class="pci-stat"><div class="pci-num" id="sMissing">0</div><div class="pci-lbl">Missing Coordinates</div></div>
       </div>
-      <div class="pci-table-wrap"><table class="pci-table"><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Lookup</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
+      <div class="pci-table-wrap"><table class="pci-table"><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
     </section>
 
     <section class="pci-card">
@@ -403,10 +403,7 @@ function render(){
  sGroups.textContent=groups.length;sTargets.textContent=targets;sFar.textContent=groups.filter(g=>g.far).length;sMissing.textContent=missing;
  summary.innerHTML=groups.map(g=>{
   const d=g.far?g.far.distance.toFixed(3)+" km":"N/A";
-  const srcOK=g.items.every(x=>x.sourceMatch&&x.source?.lat!=null&&x.source?.lon!=null);
-  const tgtOK=g.items.every(x=>x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null);
-  const lk=(srcOK?"S✓":"S✕")+" "+(tgtOK?"T✓":"T✕");
-  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${lk}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
+  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
  }).join("");
  document.getElementById("groups").innerHTML=groups.map((g,i)=>{
   const rows=g.items.map(x=>`<tr>
@@ -417,10 +414,9 @@ function render(){
   const sx=g.items[0];
   const sourceInfo=sx.source?`${esc(sx.srcName||sx.source.nm||"")} → ${sx.source.lat!=null&&sx.source.lon!=null?esc(sx.source.lat)+", "+esc(sx.source.lon):'<span class="bad">No Lat/Lon</span>'} <small>(${esc(sx.sourceMatchMode||"")})</small>`:'<span class="bad">Gcell source not found</span>';
   return `<div class="group"><div class="ghead"><b>NR CELL ${esc(g.srcId)} / CONFLICT PCI ${esc(g.pci)}</b><span class="badge">${g.items.length} targets</span></div>
-  <div class="notice" style="margin:10px 14px">Source (strict): ${sourceInfo} &nbsp; | &nbsp; Target lookup: ${g.items.filter(x=>x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null).length}/${g.items.length} matched</div>
-  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Target Lookup</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
+  <div class="notice" style="margin:10px 14px"><b>Source:</b> ${sourceInfo}</div>
+  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
    <td>${esc(x.tg)}</td><td>${esc(x.tc)}</td><td>${esc(x.target?.nm||"N/A")}</td>
-   <td>${x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null?'<span class="ok">✓</span>':'<span class="bad">✕</span>'}</td>
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
    <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
   </tr>`).join("")}</tbody></table></div></div>`
