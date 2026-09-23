@@ -170,6 +170,18 @@ function excelDistance(lon1,lat1,lon2,lat2){
 function readWorkbook(file){
  return file.arrayBuffer().then(buf=>XLSX.read(buf,{type:"array",cellDates:false}));
 }
+
+// MML Report reader — Excel only. The workbook must contain both required sheets.
+async function readMMLFile(file){
+  const name=String(file?.name||"").toLowerCase();
+  if(!/\.(xlsx|xls|xlsm|xlsb)$/.test(name)){
+    throw new Error("MML Report harus berupa Excel (.xlsx, .xls, .xlsm atau .xlsb).");
+  }
+  const wb=await readWorkbook(file);
+  const conflict=findSheet(wb,"DSP_NRCELLPCICONFLICT");
+  const lst=findSheet(wb,"LST_NRCELL");
+  return {conflict,lst};
+}
 function rows(wb,name){
  const sh=wb.Sheets[name]; if(!sh)return [];
  return XLSX.utils.sheet_to_json(sh,{defval:""});
@@ -261,7 +273,7 @@ analyze.onclick=async()=>{
   const gc=await readGcell(gcellFile);
   if(!gc.length)throw new Error("Gcell data is empty.");
 
-  // Site-aware name normalization for TXT -> LST -> Gcell.
+  // Site-aware name normalization for LST NRCELL -> Gcell.
   // Do NOT use Cell ID alone: it is not unique across sites.
   function sourceSignature(name){
     const x=normCell(name);
