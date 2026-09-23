@@ -1,209 +1,250 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>5G NR PCI Conflict Analyzer</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>5G NR PCI Conflict Tool</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#0b1020;--card:#121a2d;--line:#26324d;--text:#edf2ff;--muted:#9aa8c7;--accent:#66d9ef;--warn:#ffd166;--good:#70e1a1;--danger:#ff7b8a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Arial,sans-serif}
-.wrap{max-width:1250px;margin:0 auto;padding:28px 18px 60px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}
-h1{margin:0;font-size:28px}.sub{color:var(--muted);margin-top:6px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
-h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-label{display:block;color:var(--muted);margin-bottom:6px;font-size:12px}input[type=file],input[type=text],input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0d1426;color:var(--text)}
-button{border:0;border-radius:8px;padding:10px 14px;background:var(--accent);color:#061019;font-weight:700;cursor:pointer}button.secondary{background:#27344f;color:var(--text)}button.warn{background:var(--warn);color:#231b00}button:disabled{opacity:.45;cursor:not-allowed}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.status{color:var(--muted);font-size:12px}.pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;background:#27344f}.pill.rec{background:#5b4a17;color:#ffe79a}.pill.ok{background:#16472e;color:#9ff0be}.pill.bad{background:#4d1f28;color:#ffb5bf}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);position:sticky;top:0;background:var(--card)}tr.rec{background:rgba(255,209,102,.06)}
-.code{background:#080d18;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;font-family:Consolas,monospace}
-.notice{padding:10px 12px;border-left:3px solid var(--warn);background:#171b27;color:#d9dfed;border-radius:6px}.small{font-size:12px;color:var(--muted)}
-@media(max-width:800px){.grid{grid-template-columns:1fr}.hero{display:block}}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#0b1020;color:#e8edf7}
+.container{max-width:1250px;margin:auto;padding:24px}.hero{padding:8px 0 22px}
+h1{margin:0;font-size:28px}.sub{color:#91a0b8;margin-top:7px}
+.card{background:#121a2c;border:1px solid #26334d;border-radius:14px;padding:18px;margin:14px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.drop{border:1px dashed #526584;border-radius:12px;padding:24px;text-align:center;cursor:pointer;background:#0e1627}
+.drop:hover{border-color:#8ca7d3}.drop input{display:none}.file{margin-top:10px;color:#a9c3ff;font-size:13px}
+button{border:0;border-radius:9px;padding:11px 16px;background:#3767e8;color:#fff;font-weight:700;cursor:pointer;margin:5px}
+button.secondary{background:#26334d}button.success{background:#218b63}button.warn{background:#8d6b20}
+button:disabled{opacity:.45;cursor:not-allowed}.actions{text-align:center;margin:16px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#0d1526;border-radius:10px;padding:14px}.num{font-size:23px;font-weight:800}.lbl{font-size:12px;color:#91a0b8}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid #26334d;text-align:left}th{color:#9fb1cf;font-size:12px}
+.badge{padding:4px 8px;border-radius:99px;background:#1c2940;font-size:11px}.ok{color:#5ee0ae}.bad{color:#ff9b9b}.star{font-weight:800;color:#ffd45a}
+.group{background:#0d1526;border:1px solid #293753;border-radius:12px;margin:12px 0;overflow:hidden}.ghead{padding:12px 14px;background:#151f34;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+pre{white-space:pre-wrap;word-break:break-word;background:#090e19;border:1px solid #26334d;border-radius:10px;padding:14px;font-size:12px;line-height:1.55}
+.command-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cmdbox{position:relative}.cmdbox button{position:absolute;right:8px;top:4px}
+.notice{padding:11px;border-radius:9px;background:#17233a;color:#b7c8e5;font-size:13px}.error{background:#351d27;color:#ffb0b0}
+.hidden{display:none}.footer{color:#71809b;text-align:center;padding:25px;font-size:12px}
+@media(max-width:800px){.grid2,.command-grid,.stats{grid-template-columns:1fr}.container{padding:14px}table{font-size:12px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
-    <div><h1>5G NR PCI Conflict Analyzer</h1><div class="sub">MML Report + Gcell → distance → farthest relation → review → RMV command</div></div>
-    <span class="pill">Excel-compatible distance</span>
-  </div>
+<div class="container">
+<div class="hero"><h1>⚡ 5G NR PCI Conflict Tool</h1><div class="sub">Analyze NRCELLPCICONFLICT → find farthest target per NR Cell + Conflict PCI → generate RMV + ADD fallback.</div></div>
 
-  <div class="card">
-    <h2>1. Upload source files</h2>
-    <div class="grid">
-      <div>
-        <label>MML Report (.xlsx)</label>
-        <input id="mml" type="file" accept=".xlsx,.xls">
-        <div id="mmlStatus" class="status">Expected sheets: DSP_NRCELLPCICONFLICT + LST_NRCELL</div>
-      </div>
-      <div>
-        <label>Gcell database (.csv / .xlsx)</label>
-        <input id="gcell" type="file" accept=".csv,.xlsx,.xls">
-        <div id="gcellStatus" class="status">Expected: gNodeB ID, Cell ID, Longitude, Latitude, Cell Name After</div>
-      </div>
-    </div>
-    <div class="row" style="margin-top:14px">
-      <button id="analyze">Analyze PCI Conflict</button>
-      <button id="example" class="secondary">Load Example</button>
-      <span id="status" class="status"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>2. Conflict result</h2>
-    <div id="summary" class="small">Upload files and click Analyze.</div>
-    <div style="overflow:auto;max-height:520px;margin-top:10px">
-      <table id="resultTable">
-        <thead><tr>
-          <th>Review</th><th>Source</th><th>Target</th><th>Conflict</th><th>Source LongLat</th><th>Target LongLat</th><th>Distance</th><th>Mapping</th>
-        </tr></thead><tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>3. Review farthest relation</h2>
-    <div id="review" class="notice">Select <b>Review Farthest</b> on a conflict group. The farthest relation is a review candidate, not an automatic delete.</div>
-    <div id="commandBox" style="display:none;margin-top:12px">
-      <label>Generated Huawei command</label>
-      <div id="command" class="code"></div>
-      <div class="row" style="margin-top:10px"><button id="copy">Copy Command</button><span id="copyStatus" class="status"></span></div>
-    </div>
-  </div>
+<div class="card">
+<h3>STEP 1 — Input Files</h3>
+<div class="grid2">
+<label class="drop">📄<br><b>MML Report</b><br><small>Excel / XLSX / XLSM</small><input id="mml" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"></label>
+<label class="drop">📊<br><b>Gcell Data</b><br><small>CSV / Excel</small><input id="gcell" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb"></label>
 </div>
+<div id="files" class="file"></div>
+<div class="actions"><button id="analyze">🔍 Analyze PCI Conflict</button></div>
+<div class="notice">Expected MML sheets: <b>DSP_NRCELLPCICONFLICT</b> and <b>LST_NRCELL</b>. Gcell should contain gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After (or equivalent columns).</div>
+</div>
+
+<div id="result" class="hidden">
+<div class="card">
+<h3>STEP 2 — PCI Conflict Summary</h3>
+<div class="stats">
+<div class="stat"><div class="num" id="sGroups">0</div><div class="lbl">Conflict Groups</div></div>
+<div class="stat"><div class="num" id="sTargets">0</div><div class="lbl">Target Rows</div></div>
+<div class="stat"><div class="num" id="sFar">0</div><div class="lbl">Farthest Selected</div></div>
+<div class="stat"><div class="num" id="sMissing">0</div><div class="lbl">Missing Coordinates</div></div>
+</div>
+<div style="overflow:auto;margin-top:14px"><table><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
+</div>
+
+<div class="card">
+<h3>STEP 3 — Review Farthest</h3>
+<div id="groups"></div>
+</div>
+
+<div class="card">
+<h3>STEP 4 — Generated Commands</h3>
+<div class="actions">
+<button onclick="copyBlock('rmv')">📋 Copy RMV</button>
+<button class="success" onclick="copyBlock('add')">📋 Copy ADD Fallback</button>
+<button class="secondary" onclick="copyBlock('all')">📋 Copy All</button>
+<button class="secondary" onclick="downloadTxt()">💾 Export TXT</button>
+</div>
+<div class="command-grid">
+<div class="cmdbox"><button class="secondary" onclick="copyBlock('rmv')">Copy</button><h4>RMV COMMANDS</h4><pre id="rmv"></pre></div>
+<div class="cmdbox"><button class="success" onclick="copyBlock('add')">Copy</button><h4>ADD FALLBACK</h4><pre id="add"></pre></div>
+</div>
+</div>
+</div>
+<div class="footer">Client-side tool — files are processed in the browser.</div>
+</div>
+
 <script>
-let mmlData=null, gcellData=null, results=[], currentReview=null;
+let mmlFile,gcellFile,groups=[],commands={rmv:"",add:""};
 
-const norm=v=>String(v??'').trim();
-const num=v=>{const n=Number(String(v??'').replace(/,/g,'')); return Number.isFinite(n)?n:null};
-const key=(a,b)=>norm(a)+'||'+norm(b);
+mml.onchange=e=>{mmlFile=e.target.files[0];showFiles()};
+gcell.onchange=e=>{gcellFile=e.target.files[0];showFiles()};
+function showFiles(){files.textContent=(mmlFile?`MML: ${mmlFile.name}`:"MML: —")+"   |   "+(gcellFile?`Gcell: ${gcellFile.name}`:"Gcell: —")}
 
-function parseNETower(ne){
-  const s=norm(ne); const p=s.split('#'); return p.length>=2?norm(p[1]):'';
+function norm(v){return String(v??"").trim()}
+function key(v){return norm(v).toLowerCase().replace(/[^a-z0-9]/g,"")}
+function pick(row,names){
+  const ks=Object.keys(row); for(const n of names){const x=ks.find(k=>key(k)===key(n));if(x!==undefined)return row[x]}
+  for(const n of names){const x=ks.find(k=>key(k).includes(key(n)));if(x!==undefined)return row[x]}
+  return "";
 }
+function num(v){const x=parseFloat(String(v??"").replace(",","."));return Number.isFinite(x)?x:null}
+function coord(row,latNames,longNames){return {lat:num(pick(row,latNames)),lon:num(pick(row,longNames))}}
+function normCell(v){return norm(v).toLowerCase().replace(/[^a-z0-9]/g,"")}
+
 function excelDistance(lon1,lat1,lon2,lat2){
-  // Same spherical-law-of-cosines formula as the user's Excel:
-  // =6371*ACOS(COS(RADIANS(90-F3))*COS(RADIANS(90-H3))
-  // +SIN(RADIANS(90-F3))*SIN(RADIANS(90-H3))*COS(RADIANS(E3-G3)))
-  const a=Number(lat1), b=Number(lat2), c=Number(lon1), d=Number(lon2);
-  if([a,b,c,d].some(x=>!Number.isFinite(x))) return null;
-  let x=Math.cos((90-a)*Math.PI/180)*Math.cos((90-b)*Math.PI/180)
-    +Math.sin((90-a)*Math.PI/180)*Math.sin((90-b)*Math.PI/180)
-    *Math.cos((c-d)*Math.PI/180);
-  x=Math.min(1,Math.max(-1,x)); return 6371*Math.acos(x);
+  // Exact spherical law of cosines equivalent to the requested Excel formula.
+  const r=Math.PI/180;
+  let c=Math.cos((90-lat1)*r)*Math.cos((90-lat2)*r)+
+        Math.sin((90-lat1)*r)*Math.sin((90-lat2)*r)*Math.cos((lon1-lon2)*r);
+  c=Math.max(-1,Math.min(1,c));
+  return 6371*Math.acos(c);
 }
-function makeGcellIndexes(rows){
-  const exact=new Map(), gbcell=new Map(), towerCell=new Map();
-  for(const r of rows){
-    const cell=norm(r['Cell Name After']??r['Cell Name']??r['Cell Name After ']);
-    const gid=norm(r['gNodeB ID']); const cid=norm(r['Cell ID']??r['Local Cell ID']);
-    const tower=norm(r['Tower ID']);
-    const obj={...r,lon:num(r['Longitude']),lat:num(r['Latitude']),gid,cid,cell,tower};
-    if(cell) exact.set(cell.toUpperCase(),obj);
-    if(gid&&cid) gbcell.set(key(gid,cid),obj);
-    if(tower&&cid) towerCell.set(key(tower,cid),obj);
+function readWorkbook(file){
+ return file.arrayBuffer().then(buf=>XLSX.read(buf,{type:"array",cellDates:false}));
+}
+function rows(wb,name){
+ const sh=wb.Sheets[name]; if(!sh)return [];
+ return XLSX.utils.sheet_to_json(sh,{defval:""});
+}
+function findSheet(wb,want){
+ const exact=wb.SheetNames.find(s=>key(s)===key(want)); return exact?rows(wb,exact):[];
+}
+async function readGcell(file){
+ const wb=await readWorkbook(file); const out=[];
+ for(const sn of wb.SheetNames){
+   const r=rows(wb,sn); if(r.length) out.push(...r);
+ }
+ return out;
+}
+function csvRead(file){
+ return new Promise((resolve,reject)=>{
+   const rd=new FileReader();rd.onload=()=>{try{resolve(XLSX.utils.sheet_to_json(XLSX.read(rd.result,{type:"string"}).Sheets.Sheet1,{defval:""}))}catch(e){reject(e)}};rd.readAsText(file)
+ })
+}
+
+analyze.onclick=async()=>{
+ if(!mmlFile||!gcellFile){alert("Please select both MML Report and Gcell.");return}
+ analyze.disabled=true; analyze.textContent="⏳ Analyzing...";
+ try{
+  const wb=await readWorkbook(mmlFile);
+  const conflict=findSheet(wb,"DSP_NRCELLPCICONFLICT");
+  const lst=findSheet(wb,"LST_NRCELL");
+  if(!conflict.length)throw new Error("Sheet DSP_NRCELLPCICONFLICT not found or empty.");
+  const gc=await readGcell(gcellFile);
+  if(!gc.length)throw new Error("Gcell data is empty.");
+
+  // Gcell indexes: primary target lookup by gNodeB ID + Cell ID.
+  const gByGnbCell=new Map(), gByName=new Map();
+  for(const r of gc){
+    const gnb=norm(pick(r,["gNodeB ID","GNBID","gNodeB ID NR"]));
+    const cid=norm(pick(r,["Cell ID","Local Cell ID","CELLID"]));
+    const nm=norm(pick(r,["Cell Name After","Cell Name","NR Cell Name"]));
+    const c=coord(r,["Latitude","Lat"],["Longitude","Long","Lon"]);
+    const obj={gnb,cid,nm,...c,row:r};
+    if(gnb&&cid)gByGnbCell.set(gnb+"|"+cid,obj);
+    if(nm)gByName.set(normCell(nm),obj);
   }
-  return {exact,gbcell,towerCell};
-}
-function lookupSource(lstRow, idx){
-  const cell=norm(lstRow['Cell Name']);
-  let hit=cell?idx.exact.get(cell.toUpperCase()):null;
-  if(hit) return {...hit,method:'Cell Name exact'};
-  const tower=parseNETower(lstRow['NE_NAME']);
-  const cid=norm(lstRow['Cell ID']??lstRow['NR Cell ID']);
-  hit=idx.towerCell.get(key(tower,cid));
-  if(hit) return {...hit,method:'Tower ID + Cell ID'};
-  return null;
-}
-function lookupTarget(conf, idx){
-  const gid=norm(conf['Conflict Cell Base Station ID']);
-  const cid=norm(conf['Conflict Cell ID']);
-  const hit=idx.gbcell.get(key(gid,cid));
-  return hit?{...hit,method:'gNodeB ID + Cell ID'}:null;
-}
-function groupKey(r){return [r.sourceNE,r.sourceCellId,r.confType,r.pci].join('|')}
+
+  // LST NRCELL source lookup: NE_NAME + NR Cell ID -> Cell Name.
+  const lstMap=new Map();
+  for(const r of lst){
+    const ne=norm(pick(r,["NE_NAME","NE Name"]));
+    const id=norm(pick(r,["NR Cell ID","NRCell ID","NRCELLID","Cell ID"]));
+    const nm=norm(pick(r,["Cell Name","Cell Name After","NR Cell Name"]));
+    if(ne&&id)lstMap.set(ne+"|"+id,nm);
+  }
+
+  const temp=[];
+  for(const r of conflict){
+    const ne=norm(pick(r,["NE_NAME","NE Name"]));
+    const srcId=norm(pick(r,["NR Cell ID","NRCell ID","NRCELLID"]));
+    const pci=norm(pick(r,["Conflict Cell PCI","Conflict PCI","PCI"]));
+    const tg=norm(pick(r,["Conflict Cell Base Station ID","Target gNodeB ID","gNodeB ID","GNBID"]));
+    const tc=norm(pick(r,["Conflict Cell ID","Target Cell ID","Cell ID","CELLID"]));
+    const mcc=norm(pick(r,["Conflict Cell MCC","MCC"]));
+    const mnc=norm(pick(r,["Conflict Cell MNC","MNC"]));
+    const srcName=lstMap.get(ne+"|"+srcId)||"";
+    let source=gByName.get(normCell(srcName));
+    // fallback: if exact cell name misses, try source gNodeB ID if it exists in NE_NAME text.
+    if(!source){
+      const m=ne.match(/\b(\d{5,})\b/);
+      if(m){
+        for(const x of gc){
+          const g=norm(pick(x,["gNodeB ID","GNBID"]));
+          if(g===m[1]){
+            const lc=norm(pick(x,["Local Cell ID","Cell ID","CELLID"]));
+            if(lc===srcId){source={gnb:g,cid:lc,nm:norm(pick(x,["Cell Name After","Cell Name"])),...coord(x,["Latitude","Lat"],["Longitude","Long","Lon"]),row:x};break}
+          }
+        }
+      }
+    }
+    const target=gByGnbCell.get(tg+"|"+tc);
+    temp.push({ne,srcId,pci,tg,tc,mcc,mnc,srcName,source,target,raw:r});
+  }
+
+  // CRITICAL GROUPING: Source NE + Source NR Cell ID + Conflict PCI.
+  // Conflict PCI groups are independent; target gNodeB is a candidate, not a grouping key.
+  const map=new Map();
+  for(const x of temp){
+    const k=x.ne+"|"+x.srcId+"|"+x.pci;
+    if(!map.has(k))map.set(k,[]);
+    let d=null;
+    if(x.source?.lat!=null&&x.source?.lon!=null&&x.target?.lat!=null&&x.target?.lon!=null)
+      d=excelDistance(x.source.lon,x.source.lat,x.target.lon,x.target.lat);
+    x.distance=d; map.get(k).push(x);
+  }
+  groups=[];
+  for(const [k,arr] of map){
+    const valid=arr.filter(x=>x.distance!=null);
+    const far=valid.length?valid.reduce((a,b)=>a.distance>b.distance?a:b):null;
+    groups.push({key:k,ne:arr[0].ne,srcId:arr[0].srcId,pci:arr[0].pci,items:arr,far});
+  }
+  render();
+ }catch(e){result.classList.remove("hidden");result.innerHTML='<div class="card error">Error: '+e.message+'</div>'}
+ finally{analyze.disabled=false;analyze.textContent="🔍 Analyze PCI Conflict"}
+};
+
 function render(){
-  const tb=document.querySelector('#resultTable tbody'); tb.innerHTML='';
-  const groups={}; results.forEach(r=>(groups[groupKey(r)]??=[]).push(r));
-  Object.values(groups).forEach(arr=>{
-    arr.sort((a,b)=>(b.distance??-1)-(a.distance??-1));
-    arr.forEach((r,i)=>{
-      const tr=document.createElement('tr'); if(i===0&&r.distance!=null)tr.className='rec';
-      const btn=r.distance!=null?`<button class="warn" onclick="review('${r.id}')">${i===0?'Review Farthest':'Review'}</button>`:'<span class="pill bad">No distance</span>';
-      tr.innerHTML=`<td>${btn}</td>
-      <td><b>${r.sourceGnb||'N/A'}</b><br>NR Cell ${r.sourceCellId}<br><span class="small">${r.sourceName||''}</span></td>
-      <td><b>${r.targetGnb||'N/A'}</b><br>Cell ${r.targetCellId}</td>
-      <td>${r.confType}<br>PCI ${r.pci??'N/A'}</td>
-      <td>${r.sLon??'N/A'}, ${r.sLat??'N/A'}</td>
-      <td>${r.tLon??'N/A'}, ${r.tLat??'N/A'}</td>
-      <td><b>${r.distance==null?'N/A':r.distance.toFixed(5)+' km'}</b><br><span class="small">${r.distance==null?'':(r.distance*1000).toFixed(2)+' m'}</span></td>
-      <td>${r.sMap}<br>${r.tMap}</td>`;
-      tb.appendChild(tr);
-    });
-  });
-  document.getElementById('summary').textContent=`Found ${results.length} conflict relation(s). Farthest is only a review candidate.`;
+ result.classList.remove("hidden");
+ let missing=0, targets=0;
+ groups.forEach(g=>{targets+=g.items.length;missing+=g.items.filter(x=>x.distance==null).length});
+ sGroups.textContent=groups.length;sTargets.textContent=targets;sFar.textContent=groups.filter(g=>g.far).length;sMissing.textContent=missing;
+ summary.innerHTML=groups.map(g=>{
+  const d=g.far?g.far.distance.toFixed(3)+" km":"N/A";
+  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
+ }).join("");
+ document.getElementById("groups").innerHTML=groups.map((g,i)=>{
+  const rows=g.items.map(x=>`<tr>
+   <td>${esc(x.tg)}</td><td>${esc(x.tc)}</td><td>${esc(x.target?.nm||"N/A")}</td>
+   <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
+   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
+  </tr>`).join("");
+  return `<div class="group"><div class="ghead"><b>NR CELL ${esc(g.srcId)} / CONFLICT PCI ${esc(g.pci)}</b><span class="badge">${g.items.length} targets</span></div>
+  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${rows}</tbody></table></div></div>`
+ }).join("");
+
+ const rmv=[],add=[];
+ groups.forEach(g=>{
+  const x=g.far;if(!x)return;
+  const mcc=norm(x.mcc),mnc=norm(x.mnc);
+  const cmd=`RMV NRCELLRELATION:NRCELLID=${x.srcId},MCC="${mcc}",MNC="${mnc}",GNBID=${x.tg},CELLID=${x.tc};`;
+  rmv.push(cmd);add.push(cmd.replace(/^RMV/,"ADD"));
+ });
+ commands.rmv=rmv.join("\n");commands.add=add.join("\n");
+ document.getElementById("rmv").textContent=commands.rmv||"No valid farthest target.";
+ document.getElementById("add").textContent=commands.add||"No fallback command.";
 }
-window.review=function(id){
-  const r=results.find(x=>x.id===id); if(!r)return; currentReview=r;
-  document.getElementById('review').innerHTML=`<b>Review candidate</b><br>
-  Source: ${r.sourceGnb||'N/A'} / NR Cell ${r.sourceCellId} / ${r.sourceName||''}<br>
-  Target: ${r.targetGnb||'N/A'} / Cell ${r.targetCellId}<br>
-  Distance: <b>${r.distance?.toFixed(5)??'N/A'} km</b><br>
-  Source: ${r.sLon}, ${r.sLat} &nbsp; → &nbsp; Target: ${r.tLon}, ${r.tLat}<br>
-  Mapping: ${r.sMap}; ${r.tMap}`;
-  if(r.targetCellId!=null && r.sourceCellId!=null){
-    const cmd=`RMV NRCELLRELATION:NRCELLID=${r.sourceCellId},MCC="${r.mcc}",MNC="${r.mnc}",GNBID=${r.targetGnb},CELLID=${r.targetCellId};`;
-    document.getElementById('command').textContent=cmd;
-    document.getElementById('commandBox').style.display='block';
-  }
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function copyBlock(which){
+ let t=which==="all"?commands.rmv+"\n\n"+commands.add:commands[which];
+ navigator.clipboard.writeText(t||"").then(()=>alert("Copied."));
 }
-document.getElementById('copy').onclick=async()=>{
-  if(!currentReview)return;
-  try{await navigator.clipboard.writeText(document.getElementById('command').textContent);document.getElementById('copyStatus').textContent='Copied';}
-  catch(e){document.getElementById('copyStatus').textContent='Copy failed; select manually.'}
-};
-async function readFile(file){
-  const ab=await file.arrayBuffer();
-  if(file.name.toLowerCase().endsWith('.csv')){
-    const text=new TextDecoder().decode(ab); return XLSX.utils.sheet_to_json(XLSX.read(text,{type:'string'}).Sheets[XLSX.read(text,{type:'string'}).SheetNames[0]],{defval:''});
-  }
-  const wb=XLSX.read(ab,{type:'array'}); return wb;
+function downloadTxt(){
+ const blob=new Blob([commands.rmv+"\n\n"+commands.add+"\n"],{type:"text/plain"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="PCI_Conflict_RMV_ADD.txt";a.click();URL.revokeObjectURL(a.href);
 }
-async function parseMML(file){
-  const wb=await readFile(file);
-  const conflict=XLSX.utils.sheet_to_json(wb.Sheets['DSP_NRCELLPCICONFLICT'],{defval:''});
-  const lst=XLSX.utils.sheet_to_json(wb.Sheets['LST_NRCELL'],{defval:''});
-  const lstMap=new Map(lst.map(r=>[norm(r['NE_NAME'])+'||'+norm(r['NR Cell ID']),r]));
-  return {conflict,lstMap};
-}
-async function parseGcell(file){
-  const wb=await readFile(file);
-  if(Array.isArray(wb)) return wb;
-  const sh=wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json(sh,{defval:''});
-}
-document.getElementById('mml').onchange=e=>{document.getElementById('mmlStatus').textContent=e.target.files[0]?.name||''};
-document.getElementById('gcell').onchange=e=>{document.getElementById('gcellStatus').textContent=e.target.files[0]?.name||''};
-document.getElementById('analyze').onclick=async()=>{
-  const mf=document.getElementById('mml').files[0], gf=document.getElementById('gcell').files[0];
-  if(!mf||!gf){document.getElementById('status').textContent='Please upload both files.';return}
-  document.getElementById('status').textContent='Reading files...';
-  try{
-    const [m,g]=await Promise.all([parseMML(mf),parseGcell(gf)]);
-    const idx=makeGcellIndexes(g); results=[];
-    m.conflict.forEach((c,n)=>{
-      const ne=norm(c['NE_NAME']), sid=norm(c['NR Cell ID']);
-      const srcRow=m.lstMap.get(ne+'||'+sid);
-      const s=srcRow?lookupSource(srcRow,idx):null;
-      const t=lookupTarget(c,idx);
-      const dist=s&&t?excelDistance(s.lon,s.lat,t.lon,t.lat):null;
-      results.push({id:'r'+n,sourceNE:ne,sourceCellId:sid,sourceGnb:s?.gid||'',sourceName:s?.cell||srcRow?.['Cell Name']||'',sLon:s?.lon,sLat:s?.lat,sMap:s?.method||'Source lookup failed',
-      targetGnb:norm(c['Conflict Cell Base Station ID']),targetCellId:norm(c['Conflict Cell ID']),tLon:t?.lon,tLat:t?.lat,tMap:t?.method||'Target lookup failed',
-      confType:norm(c['PCI Conflict Type']),pci:norm(c['Conflict Cell PCI']),mcc:norm(c['Conflict Cell MCC']),mnc:norm(c['Conflict Cell MNC']),distance:dist});
-    });
-    render(); document.getElementById('status').textContent=`Loaded ${m.conflict.length} conflict rows and ${g.length} Gcell rows.`;
-  }catch(e){console.error(e);document.getElementById('status').textContent='Error: '+e.message}
-};
-document.getElementById('example').onclick=()=>{
-  document.getElementById('status').textContent='Use your MML + Gcell files for the real mapping. Example is intentionally not hard-coded here.';
-};
 </script>
-</body></html>
+</body>
+</html>
