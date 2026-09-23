@@ -132,7 +132,6 @@
         <button class="pci-btn" onclick="copyBlock('all')">📋 Copy All</button>
         <button class="pci-btn" onclick="downloadTxt()">💾 Export TXT</button>
       </div>
-      <div class="pci-command-grid">
         <div class="pci-cmdbox"><button class="pci-btn pci-copy" onclick="copyBlock('rmv')">Copy</button><h4>RMV COMMANDS</h4><pre class="pci-pre" id="rmv"></pre></div>
         <div class="pci-cmdbox"><button class="pci-btn pci-copy" onclick="copyBlock('add')">Copy</button><h4>ADD FALLBACK</h4><pre class="pci-pre" id="add"></pre></div>
       </div>
@@ -262,10 +261,23 @@ function csvRead(file){
  })
 }
 
-function mapConflictCellToGcell(cellId){
-  const n=Number(normKey(cellId));
-  if(!Number.isFinite(n)) return "";
-  return String(n+30);
+function normKey(v){
+  return norm(v).replace(/\.0+$/,"").replace(/\s+/g,"");
+}
+
+function mapConflictCellToGcell(cellId, gnbId, gByGnbCell){
+  const original = normKey(cellId);
+  const mapped = normKey(Number(cellId) + 30);
+  const gnb = normKey(gnbId);
+  if(!gByGnbCell || !gnb) return {cellId:null, mode:"NO DATA ON GCELL"};
+
+  if(original && gByGnbCell.has(gnb+"|"+original))
+    return {cellId:cellId, mode:"NORMAL LOOKUP"};
+
+  if(mapped && gByGnbCell.has(gnb+"|"+mapped))
+    return {cellId:Number(cellId)+30, mode:"GCELL UPDATE REQUIRED"};
+
+  return {cellId:null, mode:"NO DATA ON GCELL"};
 }
 
 analyze.onclick=async()=>{
@@ -332,10 +344,6 @@ analyze.onclick=async()=>{
     if(cid&&!gByCell.has(normKey(cid)))gByCell.set(normKey(cid),obj);
   }
 
-  function normKey(v){
-    return norm(v).replace(/\.0+$/,"").replace(/\s+/g,"");
-  }
-
   // LST NRCELL source lookup: NE_NAME + NR Cell ID -> Cell Name.
   const lstMap=new Map();
   for(const r of lst){
@@ -366,11 +374,12 @@ analyze.onclick=async()=>{
     }
 
     // TARGET LOOKUP:
-    // Huawei report Cell ID is mapped to the Gcell Cell ID by +30.
-    // Example: 531 -> 561, 532 -> 562, 533 -> 563, 631 -> 661.
-    // The mapped Cell ID MUST still match the same gNodeB ID.
+    // Target lookup: try the original Conflict Cell ID first.
+    // Only if original is absent for the same gNodeB, try Conflict Cell ID + 30.
     // NEVER fall back to Cell-ID-only lookup because Cell IDs repeat across sites.
-    const targetCellId = mapConflictCellToGcell(tc);
+    const lookup = mapConflictCellToGcell(tc, tg, gByGnbCell);
+    const targetCellId = lookup.cellId;
+    const targetLookupMode = lookup.mode;
     const target = (tg && targetCellId)
       ? (gByGnbCell.get(normKey(tg)+"|"+normKey(targetCellId)) || null)
       : null;
@@ -380,7 +389,7 @@ analyze.onclick=async()=>{
     ) : "NONE";
 
     temp.push({
-      ne,srcId,pci,tg,tc,targetCellId,mcc,mnc,srcName,source,target,
+      ne,srcId,pci,tg,tc,targetCellId,targetLookupMode,mcc,mnc,srcName,source,target,
       sourceMatch:!!source,targetMatch:!!target,sourceMatchMode,raw:r
     });
   }
@@ -415,24 +424,30 @@ function render(){
  summary.innerHTML=groups.map(g=>{
   const d=g.far?g.far.distance.toFixed(3)+" km":"N/A";
   const hasMissing=g.items.some(x=>!x.target || x.distance==null);
-  const status=g.far ? (hasMissing ? '<span class="warn">⚠ Update Gcell</span>' : '<span class="ok">✓ Ready</span>') : '<span class="bad">✕ No data on Gcell</span>';
+  const hasUpdateRequired=g.items.some(x=>x.targetLookupMode==="GCELL UPDATE REQUIRED");
+  const hasNoData=g.items.some(x=>x.targetLookupMode==="NO DATA ON GCELL" || !x.target);
+  const status=hasNoData
+    ? '<span class="bad">✕ NO DATA ON GCELL</span>'
+    : (hasUpdateRequired
+      ? '<span class="warn">⚠ GCELL UPDATE REQUIRED</span>'
+      : '<span class="ok">✓ NORMAL LOOKUP</span>');
   return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${status}</td></tr>`
  }).join("");
  document.getElementById("groups").innerHTML=groups.map((g,i)=>{
   const rows=g.items.map(x=>`<tr>
    <td>${esc(x.tg)}</td><td>${esc(x.target?.cid||x.targetCellId||"N/A")}</td><td>${esc(x.target?.nm||"N/A")}</td>
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
-   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':(x.target?"":"<span class=\"bad\">⚠ No data on Gcell</span>")}</td>
+   <td>${x.targetLookupMode==="GCELL UPDATE REQUIRED" ? '<span class="warn">⚠ GCELL UPDATE REQUIRED</span>' : (x.targetLookupMode==="NORMAL LOOKUP" ? '<span class="ok">✓ NORMAL LOOKUP</span>' : '<span class="bad">✕ NO DATA ON GCELL</span>')} ${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
   </tr>`).join("");
   const sx=g.items[0];
   const sourceInfo=sx.source?`${esc(sx.srcName||sx.source.nm||"")} → ${sx.source.lat!=null&&sx.source.lon!=null?esc(sx.source.lat)+", "+esc(sx.source.lon):'<span class="bad">No Lat/Lon</span>'} <small>(${esc(sx.sourceMatchMode||"")})</small>`:'<span class="bad">Gcell source not found</span>';
   return `<div class="group"><div class="ghead"><b>NR CELL ${esc(g.srcId)} / CONFLICT PCI ${esc(g.pci)}</b><span class="badge">${g.items.length} targets</span></div>
   <div class="notice" style="margin:10px 14px"><b>Source:</b> ${sourceInfo}</div>
-  ${g.items.some(x=>!x.target) ? '<div class="pci-gcell-warning">⚠ <b>Gcell data incomplete.</b> No matching gNodeB ID + mapped Cell ID was found for one or more targets. Please update your Gcell data. No random Cell ID fallback is used.</div>' : ''}
-  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID (Gcell)</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
+  ${g.items.some(x=>x.targetLookupMode==="GCELL UPDATE REQUIRED") ? '<div class="pci-gcell-warning">⚠ <b>GCELL UPDATE REQUIRED</b><br>One or more targets were found only with the +30 Gcell Cell ID mapping. Update Gcell so the original Conflict Cell ID can be found by normal lookup.</div>' : (g.items.some(x=>x.targetLookupMode==="NO DATA ON GCELL" || x.distance==null) ? '<div class="pci-gcell-warning">⚠ <b>NO DATA ON GCELL</b><br>Please update your Gcell data.</div>' : '')}
+  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID (Gcell Lookup)</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
    <td>${esc(x.tg)}</td><td>${esc(x.target?.cid||x.targetCellId||"N/A")}</td><td>${esc(x.target?.nm||"N/A")}</td>
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
-   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
+   <td>${x.targetLookupMode==="GCELL UPDATE REQUIRED" ? '<span class="warn">⚠ GCELL UPDATE REQUIRED</span>' : (x.targetLookupMode==="NORMAL LOOKUP" ? '<span class="ok">✓ NORMAL LOOKUP</span>' : '<span class="bad">✕ NO DATA ON GCELL</span>')} ${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
   </tr>`).join("")}</tbody></table></div></div>`
  }).join("");
 
@@ -440,11 +455,20 @@ function render(){
  groups.forEach(g=>{
   const x=g.far;if(!x)return;
   const mcc=norm(x.mcc),mnc=norm(x.mnc);
-  const targetCmdCellId=x.target?.cid||x.targetCellId;
+  // IMPORTANT: Gcell mapping is lookup-only. Huawei command keeps original Conflict Cell ID.
+  const targetCmdCellId=x.tc;
   const cmd=`RMV NRCELLRELATION:NRCELLID=${x.srcId},MCC="${mcc}",MNC="${mnc}",GNBID=${x.tg},CELLID=${targetCmdCellId};`;
   rmv.push(cmd);add.push(cmd.replace(/^RMV/,"ADD"));
  });
  commands.rmv=rmv.join("\n");commands.add=add.join("\n");
+ const hasUpdateRequired=groups.some(g=>g.items.some(x=>x.targetLookupMode==="GCELL UPDATE REQUIRED"));
+ const hasNoData=groups.some(g=>g.items.some(x=>x.targetLookupMode==="NO DATA ON GCELL" || !x.target));
+ const cmdNotice=document.getElementById("commandNotice");
+ if(cmdNotice) cmdNotice.innerHTML=hasNoData
+   ? '<div class="pci-gcell-warning">⚠ <b>NO DATA ON GCELL</b> — Please update your Gcell data.</div>'
+   : (hasUpdateRequired
+      ? '<div class="pci-gcell-warning">⚠ <b>GCELL UPDATE REQUIRED</b> — Some targets are using the +30 lookup mapping. Update Gcell to restore normal lookup.</div>'
+      : '<div class="pci-gcell-ok">✓ <b>NORMAL LOOKUP</b> — All targets were found using the original Conflict Cell ID.</div>');
  document.getElementById("rmv").textContent=commands.rmv||"No valid farthest target.";
  document.getElementById("add").textContent=commands.add||"No fallback command.";
 }
