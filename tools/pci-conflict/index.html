@@ -2,123 +2,146 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>5G NR PCI Conflict Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="5G NR PCI Conflict Analyzer by Hans Dhika">
+<title>5G NR PCI Conflict Tool | Hans Dhika</title>
+<link href="../../style.css" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#0b1020;color:#e8edf7}
-.container{max-width:1250px;margin:auto;padding:24px}.hero{padding:8px 0 22px}
-h1{margin:0;font-size:28px}.sub{color:#91a0b8;margin-top:7px}
-.card{background:#121a2c;border:1px solid #26334d;border-radius:14px;padding:18px;margin:14px 0}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.drop{border:1px dashed #526584;border-radius:12px;padding:24px;text-align:center;cursor:pointer;background:#0e1627}
-.drop:hover{border-color:#8ca7d3}.drop input{display:none}.file{margin-top:10px;color:#a9c3ff;font-size:13px}
-button{border:0;border-radius:9px;padding:11px 16px;background:#3767e8;color:#fff;font-weight:700;cursor:pointer;margin:5px}
-button.secondary{background:#26334d}button.success{background:#218b63}button.warn{background:#8d6b20}
-button:disabled{opacity:.45;cursor:not-allowed}.actions{text-align:center;margin:16px 0}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#0d1526;border-radius:10px;padding:14px}.num{font-size:23px;font-weight:800}.lbl{font-size:12px;color:#91a0b8}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid #26334d;text-align:left}th{color:#9fb1cf;font-size:12px}
-.badge{padding:4px 8px;border-radius:99px;background:#1c2940;font-size:11px}.ok{color:#5ee0ae}.bad{color:#ff9b9b}.star{font-weight:800;color:#ffd45a}
-.group{background:#0d1526;border:1px solid #293753;border-radius:12px;margin:12px 0;overflow:hidden}.ghead{padding:12px 14px;background:#151f34;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-pre{white-space:pre-wrap;word-break:break-word;background:#090e19;border:1px solid #26334d;border-radius:10px;padding:14px;font-size:12px;line-height:1.55}
-.command-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cmdbox{position:relative}.cmdbox button{position:absolute;right:8px;top:4px}
-.notice{padding:11px;border-radius:9px;background:#17233a;color:#b7c8e5;font-size:13px}.error{background:#351d27;color:#ffb0b0}
-.hidden{display:none}.footer{color:#71809b;text-align:center;padding:25px;font-size:12px}
-@media(max-width:800px){.grid2,.command-grid,.stats{grid-template-columns:1fr}.container{padding:14px}table{font-size:12px}}
-</style>
-
-<style id="site-header-style">
-.site-header{
-  position:sticky;top:0;z-index:1000;
-  width:100%;box-sizing:border-box;
-  display:flex;align-items:center;gap:28px;
-  padding:16px 28px;
-  margin:0 0 24px;
-  background:rgba(10,10,12,.92);
-  backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-.site-header .brand{
-  color:#fff;text-decoration:none;font-size:24px;font-weight:800;
-  letter-spacing:-.04em;
-}
-.site-nav{display:flex;align-items:center;gap:22px;flex:1}
-.site-nav a,.back-tools{
-  color:rgba(255,255,255,.72);text-decoration:none;
-  font-size:14px;font-weight:500;
-  transition:color .2s ease;
-}
-.site-nav a:hover,.back-tools:hover{color:#fff}
-.back-tools{margin-left:auto}
+/* PCI Conflict tool styling — intentionally follows the portfolio's light design system. */
+.pci-page{padding-top:35px;padding-bottom:70px}
+.pci-hero{padding:20px 0 28px}
+.pci-hero h1{font-size:clamp(34px,5vw,52px);margin-bottom:12px}
+.pci-hero .intro{font-size:16px}
+.pci-card{border:1px solid #dfe4eb;border-radius:10px;padding:24px;margin:16px 0;background:#fff}
+.pci-card h3{margin-top:0}
+.pci-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pci-drop{display:block;border:1px dashed #b9c2d0;border-radius:8px;padding:24px;text-align:center;cursor:pointer;background:#fafbfc;transition:.18s}
+.pci-drop:hover{border-color:#1769e8;background:#f8fbff}
+.pci-drop input{display:none}
+.pci-file{margin-top:12px;color:#687386;font-size:13px}
+.pci-actions{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.pci-actions.center{justify-content:center}
+.pci-btn{display:inline-block;border:1px solid #d7dce5;background:#fff;color:#172033;border-radius:7px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.pci-btn:hover{border-color:#1769e8;color:#1769e8}
+.pci-btn.primary{background:#1769e8;color:#fff;border-color:#1769e8}
+.pci-btn.success{background:#fff;border-color:#218b63;color:#218b63}
+.pci-btn:disabled{opacity:.45;cursor:not-allowed}
+.pci-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+.pci-stat{border:1px solid #e0e4ea;border-radius:8px;padding:14px;background:#f7f8fa}
+.pci-num{font-size:23px;font-weight:800;color:#172033}
+.pci-lbl{font-size:12px;color:#687386}
+.pci-table-wrap{overflow:auto;border:1px solid #e0e4ea;border-radius:7px;margin-top:14px}
+.pci-table{width:100%;border-collapse:collapse;min-width:760px;font-size:13px}
+.pci-table th,.pci-table td{padding:10px 12px;border-bottom:1px solid #e8ebf0;text-align:left;white-space:nowrap}
+.pci-table th{background:#f7f8fa;color:#596273;font-size:12px}
+.pci-badge{display:inline-block;padding:4px 8px;border-radius:99px;background:#f1f4f8;font-size:11px;color:#596273}
+.pci-ok{color:#218b63;font-weight:700}
+.pci-bad{color:#c53b3b;font-weight:700}
+.pci-star{font-weight:800;color:#b77900}
+.pci-group{border:1px solid #dfe4eb;border-radius:9px;margin:12px 0;overflow:hidden}
+.pci-ghead{padding:13px 15px;background:#f7f8fa;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pci-notice{padding:11px;border-radius:7px;background:#f4f7fb;color:#596273;font-size:13px;margin:12px 14px}
+.pci-error{background:#fff3f3;border-color:#efcaca;color:#a32e2e}
+.pci-command-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pci-cmdbox{position:relative}
+.pci-cmdbox .pci-copy{position:absolute;right:8px;top:0}
+.pci-pre{white-space:pre-wrap;word-break:break-word;background:#f7f8fa;border:1px solid #dfe4eb;border-radius:7px;padding:14px;font-size:12px;line-height:1.55;min-height:80px}
+.pci-footer{padding:10px 0 0;color:#8a94a3;font-size:12px}
 @media(max-width:700px){
-  .site-header{padding:14px 18px;gap:14px}
-  .site-nav{gap:12px;overflow:auto;white-space:nowrap}
-  .site-nav a:nth-child(n+4){display:none}
-  .back-tools{display:none}
+  .pci-page{padding-top:18px}
+  .pci-grid2,.pci-command-grid,.pci-stats{grid-template-columns:1fr}
+  .pci-card{padding:18px}
+  .pci-hero h1{font-size:34px}
 }
 </style>
 </head>
 <body>
-<header class="site-header">
-  <a class="brand" href="https://hansdhika.github.io/">HD.</a>
-  <nav class="site-nav" aria-label="Main navigation">
-    <a href="https://hansdhika.github.io/">Home</a>
-    <a href="https://hansdhika.github.io/#tools">Tools</a>
-    <a href="https://hansdhika.github.io/#projects">Projects</a>
-    <a href="https://hansdhika.github.io/#about">About</a>
-    <a href="https://hansdhika.github.io/#contact">Contact</a>
-  </nav>
-  <a class="back-tools" href="https://hansdhika.github.io/">← Portfolio</a>
+<header>
+  <div class="container nav">
+    <a class="logo" href="../../">HD.</a>
+    <button aria-label="Open navigation" class="menu" id="menu">☰</button>
+    <nav aria-label="Main navigation" id="nav">
+      <a href="../../">Home</a>
+      <div class="nav-tools">
+        <button class="nav-tools-toggle" type="button" aria-expanded="true" aria-haspopup="true">Tools <span class="nav-chevron">⌄</span></button>
+        <div class="nav-tools-menu" role="menu">
+          <a href="../" role="menuitem">All Tools</a>
+          <a href="../kpi-monitoring/" role="menuitem">KPI Monitoring</a>
+          <a href="../kpi-analytics.html" role="menuitem">KPI Analytics</a>
+          <a href="../5g-report-automation.html" role="menuitem">5G Report Automation</a>
+          <a href="../excel-csv-processor.html" role="menuitem">Excel / CSV Processor</a>
+          <a href="../mml-parser/" role="menuitem">MML Parser</a>
+          <a href="../mml-creator/" role="menuitem">MML Creator</a>
+          <a href="./" role="menuitem" class="active">PCI Conflict</a>
+          <a href="../5G-Tilting-Simulator/" role="menuitem">5G Tilting Simulator</a>
+        </div>
+      </div>
+      <a href="../../projects/">Projects</a>
+      <a href="../../about/">About</a>
+      <a href="../../contact/">Contact</a>
+    </nav>
+  </div>
 </header>
 
-<div class="container">
-<div class="hero"><h1>⚡ 5G NR PCI Conflict Tool</h1><div class="sub">Analyze NRCELLPCICONFLICT → farthest target per NR Cell + Conflict PCI → generate RMV + ADD fallback.</div></div>
+<main class="container pci-page">
+  <section class="pci-hero">
+    <p class="label">5G TOOL · HUAWEI</p>
+    <h1>5G NR PCI Conflict Tool</h1>
+    <p class="intro">Analyze <strong>NRCELLPCICONFLICT</strong>, select the farthest target for each <strong>NR Cell + Conflict PCI</strong> group, then generate RMV commands with an ADD fallback.</p>
+  </section>
 
-<div class="card">
-<h3>STEP 1 — Input Files</h3>
-<div class="grid2">
-<label class="drop">📄<br><b>MML Report</b><br><small>Excel / XLSX / XLSM / XLSB</small><input id="mml" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"></label>
-<label class="drop">📊<br><b>Gcell Data</b><br><small>CSV / Excel</small><input id="gcell" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb"></label>
-</div>
-<div id="files" class="file"></div>
-<div class="actions"><button id="analyze">🔍 Analyze PCI Conflict</button></div>
-<div class="notice">TXT mode reads Huawei <b>DSP NRCELLPCICONFLICT</b> + <b>LST NRCELL</b> blocks directly. Excel mode uses sheets with the same names. Gcell supports CSV / Excel with gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After.</div>
-</div>
+  <section class="pci-card">
+    <p class="label">STEP 1 — INPUT FILES</p>
+    <div class="pci-grid2">
+      <label class="pci-drop">📄<br><b>MML Report</b><br><small>Excel / XLSX / XLSM / XLSB</small>
+        <input id="mml" type="file" accept=".xlsx,.xls,.xlsm,.xlsb">
+      </label>
+      <label class="pci-drop">📊<br><b>Gcell Data</b><br><small>CSV / Excel</small>
+        <input id="gcell" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb">
+      </label>
+    </div>
+    <div id="files" class="pci-file"></div>
+    <div class="pci-actions center"><button class="pci-btn primary" id="analyze">🔍 Analyze PCI Conflict</button></div>
+    <div class="pci-notice"><b>MML Report:</b> Excel only. Required sheets: <b>DSP_NRCELLPCICONFLICT</b> and <b>LST_NRCELL</b>.<br><b>Gcell:</b> CSV / Excel with gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After.</div>
+  </section>
 
-<div id="result" class="hidden">
-<div class="card">
-<h3>STEP 2 — PCI Conflict Summary</h3>
-<div class="stats">
-<div class="stat"><div class="num" id="sGroups">0</div><div class="lbl">Conflict Groups</div></div>
-<div class="stat"><div class="num" id="sTargets">0</div><div class="lbl">Target Rows</div></div>
-<div class="stat"><div class="num" id="sFar">0</div><div class="lbl">Farthest Selected</div></div>
-<div class="stat"><div class="num" id="sMissing">0</div><div class="lbl">Missing Coordinates</div></div>
-</div>
-<div style="overflow:auto;margin-top:14px"><table><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Lookup</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
-</div>
+  <div id="result" class="hidden">
+    <section class="pci-card">
+      <p class="label">STEP 2 — PCI CONFLICT SUMMARY</p>
+      <div class="pci-stats">
+        <div class="pci-stat"><div class="pci-num" id="sGroups">0</div><div class="pci-lbl">Conflict Groups</div></div>
+        <div class="pci-stat"><div class="pci-num" id="sTargets">0</div><div class="pci-lbl">Target Rows</div></div>
+        <div class="pci-stat"><div class="pci-num" id="sFar">0</div><div class="pci-lbl">Farthest Selected</div></div>
+        <div class="pci-stat"><div class="pci-num" id="sMissing">0</div><div class="pci-lbl">Missing Coordinates</div></div>
+      </div>
+      <div class="pci-table-wrap"><table class="pci-table"><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Lookup</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
+    </section>
 
-<div class="card">
-<h3>STEP 3 — Review Farthest</h3>
-<div id="groups"></div>
-</div>
+    <section class="pci-card">
+      <p class="label">STEP 3 — REVIEW FARTHEST</p>
+      <div id="groups"></div>
+    </section>
 
-<div class="card">
-<h3>STEP 4 — Generated Commands</h3>
-<div class="actions">
-<button onclick="copyBlock('rmv')">📋 Copy RMV</button>
-<button class="success" onclick="copyBlock('add')">📋 Copy ADD Fallback</button>
-<button class="secondary" onclick="copyBlock('all')">📋 Copy All</button>
-<button class="secondary" onclick="downloadTxt()">💾 Export TXT</button>
-</div>
-<div class="command-grid">
-<div class="cmdbox"><button class="secondary" onclick="copyBlock('rmv')">Copy</button><h4>RMV COMMANDS</h4><pre id="rmv"></pre></div>
-<div class="cmdbox"><button class="success" onclick="copyBlock('add')">Copy</button><h4>ADD FALLBACK</h4><pre id="add"></pre></div>
-</div>
-</div>
-</div>
-<div class="footer">Client-side tool — files are processed in the browser.</div>
-</div>
+    <section class="pci-card">
+      <p class="label">STEP 4 — GENERATED COMMANDS</p>
+      <div class="pci-actions">
+        <button class="pci-btn primary" onclick="copyBlock('rmv')">📋 Copy RMV</button>
+        <button class="pci-btn success" onclick="copyBlock('add')">📋 Copy ADD Fallback</button>
+        <button class="pci-btn" onclick="copyBlock('all')">📋 Copy All</button>
+        <button class="pci-btn" onclick="downloadTxt()">💾 Export TXT</button>
+      </div>
+      <div class="pci-command-grid">
+        <div class="pci-cmdbox"><button class="pci-btn pci-copy" onclick="copyBlock('rmv')">Copy</button><h4>RMV COMMANDS</h4><pre class="pci-pre" id="rmv"></pre></div>
+        <div class="pci-cmdbox"><button class="pci-btn pci-copy" onclick="copyBlock('add')">Copy</button><h4>ADD FALLBACK</h4><pre class="pci-pre" id="add"></pre></div>
+      </div>
+    </section>
+  </div>
+  <div class="pci-footer">Client-side tool — files are processed in the browser.</div>
+</main>
 
 <script>
+
 let mmlFile,gcellFile,groups=[],commands={rmv:"",add:""};
 
 mml.onchange=e=>{mmlFile=e.target.files[0];showFiles()};
@@ -143,79 +166,6 @@ function excelDistance(lon1,lat1,lon2,lat2){
         Math.sin((90-lat1)*r)*Math.sin((90-lat2)*r)*Math.cos((lon1-lon2)*r);
   c=Math.max(-1,Math.min(1,c));
   return 6371*Math.acos(c);
-}
-function parseHuaweiMMLText(text){
-  const lines=text.replace(/^\uFEFF/,"").replace(/\r/g,"").split("\n");
-  const conflict=[], lst=[];
-  let mode="", ne="";
-  const conflictRe=/^(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s*$/;
-  const lstRe=/^(\d+)\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$/;
-
-  for(let i=0;i<lines.length;i++){
-    const t=lines[i].trim();
-    if(!t) continue;
-
-    // Huawei MML export identifies the NE before each command block.
-    if(/^XCH_[^\s]+/i.test(t)){
-      ne=t.split(/\s+/)[0];
-      continue;
-    }
-
-    if(/^DSP\s+NRCELLPCICONFLICT\s*:/i.test(t)){
-      mode="conflict";
-      continue;
-    }
-
-    if(/^LST\s+NRCELL\s*:/i.test(t)){
-      mode="lst";
-      continue;
-    }
-
-    if(/^---\s+END/i.test(t)){
-      mode="";
-      continue;
-    }
-
-    if(mode==="conflict"){
-      const m=t.match(conflictRe);
-      if(m){
-        conflict.push({
-          "NE_NAME":ne,
-          "NR Cell ID":m[1],
-          "PCI Conflict Type":m[2].trim(),
-          "Conflict Cell MCC":m[3],
-          "Conflict Cell MNC":m[4],
-          "Conflict Cell ID":m[5],
-          "Conflict Cell PCI":m[6],
-          "Conflict Cell Base Station ID":m[7],
-          "Conflict Cell Downlink Frequency":m[8],
-          "Conflict Cell RAT Type":m[9]
-        });
-      }
-    }
-
-    if(mode==="lst"){
-      const m=t.match(lstRe);
-      if(m){
-        lst.push({
-          "NE_NAME":ne,
-          "NR Cell ID":m[1],
-          "Cell Name":m[2],
-          "Cell ID":m[3],
-          "Frequency Band":m[4],
-          "Duplex Mode":m[5],
-          "User Label":m[6],
-          "Cell Activate State":m[7]
-        });
-      }
-    }
-  }
-  return {conflict,lst};
-}
-function readMMLFile(file){
-  const n=file.name.toLowerCase();
-  if(n.endsWith(".txt")||n.endsWith(".log")) return file.text().then(parseHuaweiMMLText);
-  return readWorkbook(file).then(wb=>({conflict:findSheet(wb,"DSP_NRCELLPCICONFLICT"),lst:findSheet(wb,"LST_NRCELL")}));
 }
 function readWorkbook(file){
  return file.arrayBuffer().then(buf=>XLSX.read(buf,{type:"array",cellDates:false}));
@@ -306,8 +256,8 @@ analyze.onclick=async()=>{
   const mmlData=await readMMLFile(mmlFile);
   const conflict=mmlData.conflict;
   const lst=mmlData.lst;
-  if(!conflict.length)throw new Error("DSP NRCELLPCICONFLICT data not found in MML report. Check that the TXT contains the Huawei DSP NRCELLPCICONFLICT table.");
-  if(!lst.length)throw new Error("LST NRCELL data not found in MML report. Check that the TXT contains the Huawei LST NRCELL table.");
+  if(!conflict.length)throw new Error("DSP_NRCELLPCICONFLICT sheet tidak ditemukan atau kosong. Pastikan MML Report Excel memiliki sheet tersebut.");
+  if(!lst.length)throw new Error("LST_NRCELL sheet tidak ditemukan atau kosong. Pastikan MML Report Excel memiliki sheet tersebut.");
   const gc=await readGcell(gcellFile);
   if(!gc.length)throw new Error("Gcell data is empty.");
 
@@ -484,6 +434,8 @@ function downloadTxt(){
  const blob=new Blob([commands.rmv+"\n\n"+commands.add+"\n"],{type:"text/plain"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="PCI_Conflict_RMV_ADD.txt";a.click();URL.revokeObjectURL(a.href);
 }
+
 </script>
+<script src="../../script.js"></script>
 </body>
 </html>
