@@ -24,63 +24,21 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090e19;border:1px sol
 .notice{padding:11px;border-radius:9px;background:#17233a;color:#b7c8e5;font-size:13px}.error{background:#351d27;color:#ffb0b0}
 .hidden{display:none}.footer{color:#71809b;text-align:center;padding:25px;font-size:12px}
 @media(max-width:800px){.grid2,.command-grid,.stats{grid-template-columns:1fr}.container{padding:14px}table{font-size:12px}}
-
-/* Portfolio header */
-.site-header{background:#fff!important;border-bottom:1px solid #e7eaf0;padding:0 20px;position:sticky;top:0;z-index:50}
-.site-header-inner{max-width:1050px;margin:auto;height:68px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-.site-logo{font-size:20px;font-weight:800;letter-spacing:-1px;color:#1769e8;text-decoration:none}
-.site-nav{display:flex;align-items:center;gap:25px}
-.site-nav>a,.site-tools-toggle{font-family:Inter,Arial,sans-serif;font-size:14px;color:#596273;text-decoration:none;background:transparent;border:0;padding:8px 0;cursor:pointer;font-weight:500}
-.site-nav>a:hover,.site-tools-toggle:hover,.site-tools.open .site-tools-toggle{color:#1769e8}
-.site-tools{position:relative}
-.site-tools-toggle{display:flex;align-items:center;gap:5px}
-.site-tools-menu{position:absolute;right:-10px;top:calc(100% + 7px);min-width:225px;padding:7px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 14px 30px rgba(15,23,42,.12);display:none;z-index:100}
-.site-tools.open .site-tools-menu{display:block}
-.site-tools-menu a{display:block;padding:9px 11px;border-radius:7px;color:#596273!important;text-decoration:none;font-size:13px!important;white-space:nowrap}
-.site-tools-menu a:hover{background:#f4f7fb;color:#1769e8!important}
-@media(max-width:700px){.site-header{padding:0 14px}.site-header-inner{height:auto;min-height:58px;align-items:flex-start;padding:10px 0}.site-nav{gap:14px;flex-wrap:wrap;justify-content:flex-end}.site-nav>a,.site-tools-toggle{font-size:12px}.site-tools-menu{right:0;max-height:50vh;overflow:auto}}
-
 </style>
 </head>
 <body>
-<header class="site-header">
-  <div class="site-header-inner">
-    <a class="site-logo" href="../../">HD.</a>
-    <nav class="site-nav" aria-label="Main navigation">
-      <a href="../../">Home</a>
-      <div class="site-tools">
-        <button class="site-tools-toggle" type="button" aria-expanded="false" aria-haspopup="true">Tools <span>⌄</span></button>
-        <div class="site-tools-menu" role="menu">
-          <a href="../../tools/" role="menuitem">All Tools</a>
-          <a href="../../tools/kpi-monitoring/" role="menuitem">KPI Monitoring</a>
-          <a href="../../tools/kpi-analytics.html" role="menuitem">KPI Analytics</a>
-          <a href="../../tools/5g-report-automation.html" role="menuitem">5G Report Automation</a>
-          <a href="../../tools/excel-csv-processor.html" role="menuitem">Excel / CSV Processor</a>
-          <a href="../../tools/mml-parser/" role="menuitem">MML Parser</a>
-          <a href="../../tools/mml-creator/" role="menuitem">MML Creator</a>
-          <a href="../../tools/pci-conflict/" role="menuitem" aria-current="page">PCI Conflict</a>
-          <a href="../../tools/5G-Tilting-Simulator/" role="menuitem">5G Tilting Simulator</a>
-        </div>
-      </div>
-      <a href="../../projects/">Projects</a>
-      <a href="../../about/">About</a>
-      <a href="../../contact/">Contact</a>
-    </nav>
-  </div>
-</header>
 <div class="container">
-
 <div class="hero"><h1>⚡ 5G NR PCI Conflict Tool</h1><div class="sub">Analyze NRCELLPCICONFLICT → find farthest target per NR Cell + Conflict PCI → generate RMV + ADD fallback.</div></div>
 
 <div class="card">
 <h3>STEP 1 — Input Files</h3>
 <div class="grid2">
-<label class="drop">📄<br><b>MML Report</b><br><small>Excel / XLSX / XLSM</small><input id="mml" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"></label>
+<label class="drop">📄<br><b>MML Report</b><br><small>Huawei TXT / Excel</small><input id="mml" type="file" accept=".txt,.log,.xlsx,.xls,.xlsm,.xlsb"></label>
 <label class="drop">📊<br><b>Gcell Data</b><br><small>CSV / Excel</small><input id="gcell" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb"></label>
 </div>
 <div id="files" class="file"></div>
 <div class="actions"><button id="analyze">🔍 Analyze PCI Conflict</button></div>
-<div class="notice">Expected MML sheets: <b>DSP_NRCELLPCICONFLICT</b> and <b>LST_NRCELL</b>. Gcell should contain gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After (or equivalent columns).</div>
+<div class="notice">MML TXT should contain <b>DSP NRCELLPCICONFLICT</b> and <b>LST NRCELL</b> blocks, or Excel sheets with the same names. Gcell should contain gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After (or equivalent columns).</div>
 </div>
 
 <div id="result" class="hidden">
@@ -143,6 +101,38 @@ function excelDistance(lon1,lat1,lon2,lat2){
   c=Math.max(-1,Math.min(1,c));
   return 6371*Math.acos(c);
 }
+function parseHuaweiMMLText(text){
+  const lines=text.replace(/\r/g,"").split("\n"), conflict=[], lst=[];
+  let mode="", ne="";
+  for(let i=0;i<lines.length;i++){
+    const t=lines[i].trim();
+    if(/^XCH_[^\s]+/i.test(t)) ne=t.split(/\s+/)[0];
+    if(/^DSP\s+NRCELLPCICONFLICT\s*:/i.test(t)){mode="conflict";continue}
+    if(/^LST\s+NRCELL\s*:/i.test(t)){mode="lst";continue}
+    if(mode==="conflict" && /^\d+\s+/.test(t)){
+      const a=t.split(/\s+/);
+      if(a.length>=9 && /^\d+$/.test(a[0])){
+        conflict.push({"NE_NAME":ne,"NR Cell ID":a[0],"PCI Conflict Type":a[1],
+          "Conflict Cell MCC":a[2],"Conflict Cell MNC":a[3],"Conflict Cell ID":a[4],
+          "Conflict Cell PCI":a[5],"Conflict Cell Base Station ID":a[6],
+          "Conflict Cell Downlink Frequency":a[7],"Conflict Cell RAT Type":a[8]});
+      }
+    }
+    if(mode==="lst" && /^\d+\s+/.test(t)){
+      const a=t.split(/\s+/);
+      if(a.length>=7 && /^\d+$/.test(a[0])){
+        lst.push({"NE_NAME":ne,"NR Cell ID":a[0],"Cell Name":a[1],"Cell ID":a[2],
+          "Frequency Band":a[3],"Duplex Mode":a[4],"User Label":a[5],"Cell Activate State":a[6]});
+      }
+    }
+  }
+  return {conflict,lst};
+}
+function readMMLFile(file){
+  const n=file.name.toLowerCase();
+  if(n.endsWith(".txt")||n.endsWith(".log")) return file.text().then(parseHuaweiMMLText);
+  return readWorkbook(file).then(wb=>({conflict:findSheet(wb,"DSP_NRCELLPCICONFLICT"),lst:findSheet(wb,"LST_NRCELL")}));
+}
 function readWorkbook(file){
  return file.arrayBuffer().then(buf=>XLSX.read(buf,{type:"array",cellDates:false}));
 }
@@ -170,10 +160,10 @@ analyze.onclick=async()=>{
  if(!mmlFile||!gcellFile){alert("Please select both MML Report and Gcell.");return}
  analyze.disabled=true; analyze.textContent="⏳ Analyzing...";
  try{
-  const wb=await readWorkbook(mmlFile);
-  const conflict=findSheet(wb,"DSP_NRCELLPCICONFLICT");
-  const lst=findSheet(wb,"LST_NRCELL");
-  if(!conflict.length)throw new Error("Sheet DSP_NRCELLPCICONFLICT not found or empty.");
+  const mmlData=await readMMLFile(mmlFile);
+  const conflict=mmlData.conflict;
+  const lst=mmlData.lst;
+  if(!conflict.length)throw new Error("DSP NRCELLPCICONFLICT data not found in MML report.");
   const gc=await readGcell(gcellFile);
   if(!gc.length)throw new Error("Gcell data is empty.");
 
@@ -287,14 +277,6 @@ function downloadTxt(){
  const blob=new Blob([commands.rmv+"\n\n"+commands.add+"\n"],{type:"text/plain"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="PCI_Conflict_RMV_ADD.txt";a.click();URL.revokeObjectURL(a.href);
 }
-</script>
-
-<script>
-document.querySelectorAll(".site-tools-toggle").forEach(btn=>btn.addEventListener("click",e=>{
- e.stopPropagation(); const w=btn.closest(".site-tools"); w.classList.toggle("open");
- btn.setAttribute("aria-expanded",w.classList.contains("open"));
-}));
-document.addEventListener("click",()=>document.querySelectorAll(".site-tools.open").forEach(w=>w.classList.remove("open")));
 </script>
 </body>
 </html>
