@@ -548,3 +548,11 @@ footer {
     padding: 8px 10px;
   }
 }
+
+/* Shared navigation polish */
+.nav-tools-menu{max-height:min(70vh,520px);overflow-y:auto}
+.nav-tools-menu a{display:block}
+@media(max-width:700px){
+  .nav-tools-menu{position:static;margin-top:6px;box-shadow:none;max-height:50vh}
+  .nav-tools.open .nav-tools-menu{display:block}
+}

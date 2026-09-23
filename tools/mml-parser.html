@@ -14,32 +14,33 @@
  </head>
  <body>
   <header>
-   <div class="container nav">
-    <a class="logo" href="../">
-     HD.
-    </a>
-    <button aria-label="Open navigation" class="menu" id="menu">
-     ☰
-    </button>
+  <div class="container nav">
+    <a class="logo" href="../">HD.</a>
+    <button aria-label="Open navigation" class="menu" id="menu">☰</button>
     <nav aria-label="Main navigation" id="nav">
-     <a class="" href="../">
-      Home
-     </a>
-     <a class="active" href="./">
-      Tools
-     </a>
-     <a class="" href="../projects/">
-      Projects
-     </a>
-     <a class="" href="../about/">
-      About
-     </a>
-     <a class="" href="../contact/">
-      Contact
-     </a>
+      <a class="" href="../">Home</a>
+      <div class="nav-tools">
+      <button class="nav-tools-toggle" type="button" aria-expanded="false" aria-haspopup="true">
+        Tools <span class="nav-chevron">⌄</span>
+      </button>
+      <div class="nav-tools-menu" role="menu">
+        <a href="../tools/" role="menuitem">All Tools</a>
+        <a href="../tools/kpi-monitoring/" role="menuitem">KPI Monitoring</a>
+        <a href="../tools/kpi-analytics.html" role="menuitem">KPI Analytics</a>
+        <a href="../tools/5g-report-automation.html" role="menuitem">5G Report Automation</a>
+        <a href="../tools/excel-csv-processor.html" role="menuitem">Excel / CSV Processor</a>
+        <a href="../tools/mml-parser/" role="menuitem">MML Parser</a>
+        <a href="../tools/mml-creator/" role="menuitem">MML Creator</a>
+        <a href="../tools/pci-conflict/" role="menuitem">PCI Conflict</a>
+        <a href="../tools/5G-Tilting-Simulator/" role="menuitem">5G Tilting Simulator</a>
+      </div>
+    </div>
+      <a class="" href="../projects/">Projects</a>
+      <a class="" href="../about/">About</a>
+      <a class="" href="../contact/">Contact</a>
     </nav>
-   </div>
-  </header>
+  </div>
+</header>
   <main class="container section">
    <div class="section-title">
     <p class="label">
