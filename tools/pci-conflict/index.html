@@ -54,7 +54,8 @@
   .pci-card{padding:18px}
   .pci-hero h1{font-size:34px}
 }
-</style>
+
+.pci-gcell-warning{margin:10px 14px;padding:10px 12px;border:1px solid #f0c36a;background:#fff8e6;color:#7a4d00;border-radius:8px;font-size:13px;line-height:1.45}.warn{color:#9a6700;font-weight:600}</style>
 </head>
 <body>
 <header>
@@ -103,7 +104,7 @@
     </div>
     <div id="files" class="pci-file"></div>
     <div class="pci-actions center"><button class="pci-btn primary" id="analyze">🔍 Analyze PCI Conflict</button></div>
-    <div class="pci-notice"><b>MML Report:</b> Excel only. Required sheets: <b>DSP_NRCELLPCICONFLICT</b> and <b>LST_NRCELL</b>.<br><b>Gcell:</b> CSV / Excel with gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After.</div>
+    <div class="pci-notice"><b>MML Report:</b> Excel only. Required sheets: <b>DSP_NRCELLPCICONFLICT</b> and <b>LST_NRCELL</b>.<br><b>Gcell:</b> CSV / Excel with gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After.<br><b>Target mapping:</b> Conflict Cell ID + 30 → Gcell Cell ID (same gNodeB ID).</div>
   </section>
 
   <div id="result" class="hidden">
@@ -261,6 +262,12 @@ function csvRead(file){
  })
 }
 
+function mapConflictCellToGcell(cellId){
+  const n=Number(normKey(cellId));
+  if(!Number.isFinite(n)) return "";
+  return String(n+30);
+}
+
 analyze.onclick=async()=>{
  if(!mmlFile||!gcellFile){alert("Please select both MML Report and Gcell.");return}
  analyze.disabled=true; analyze.textContent="⏳ Analyzing...";
@@ -359,17 +366,21 @@ analyze.onclick=async()=>{
     }
 
     // TARGET LOOKUP:
-    // Primary key is Conflict Base Station ID + Conflict Cell ID.
-    // Cell-ID-only fallback remains allowed for target only.
-    let target=gByGnbCell.get(normKey(tg)+"|"+normKey(tc))||null;
-    if(!target) target=gByCell.get(normKey(tc))||null;
+    // Huawei report Cell ID is mapped to the Gcell Cell ID by +30.
+    // Example: 531 -> 561, 532 -> 562, 533 -> 563, 631 -> 661.
+    // The mapped Cell ID MUST still match the same gNodeB ID.
+    // NEVER fall back to Cell-ID-only lookup because Cell IDs repeat across sites.
+    const targetCellId = mapConflictCellToGcell(tc);
+    const target = (tg && targetCellId)
+      ? (gByGnbCell.get(normKey(tg)+"|"+normKey(targetCellId)) || null)
+      : null;
 
     const sourceMatchMode = source ? (
       gByName.get(normCell(srcName)) ? "EXACT" : "SITE-AWARE"
     ) : "NONE";
 
     temp.push({
-      ne,srcId,pci,tg,tc,mcc,mnc,srcName,source,target,
+      ne,srcId,pci,tg,tc,targetCellId,mcc,mnc,srcName,source,target,
       sourceMatch:!!source,targetMatch:!!target,sourceMatchMode,raw:r
     });
   }
@@ -403,20 +414,23 @@ function render(){
  sGroups.textContent=groups.length;sTargets.textContent=targets;sFar.textContent=groups.filter(g=>g.far).length;sMissing.textContent=missing;
  summary.innerHTML=groups.map(g=>{
   const d=g.far?g.far.distance.toFixed(3)+" km":"N/A";
-  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
+  const hasMissing=g.items.some(x=>!x.target || x.distance==null);
+  const status=g.far ? (hasMissing ? '<span class="warn">⚠ Update Gcell</span>' : '<span class="ok">✓ Ready</span>') : '<span class="bad">✕ No data on Gcell</span>';
+  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${status}</td></tr>`
  }).join("");
  document.getElementById("groups").innerHTML=groups.map((g,i)=>{
   const rows=g.items.map(x=>`<tr>
-   <td>${esc(x.tg)}</td><td>${esc(x.tc)}</td><td>${esc(x.target?.nm||"N/A")}</td>
+   <td>${esc(x.tg)}</td><td>${esc(x.target?.cid||x.targetCellId||"N/A")}</td><td>${esc(x.target?.nm||"N/A")}</td>
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
-   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
+   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':(x.target?"":"<span class=\"bad\">⚠ No data on Gcell</span>")}</td>
   </tr>`).join("");
   const sx=g.items[0];
   const sourceInfo=sx.source?`${esc(sx.srcName||sx.source.nm||"")} → ${sx.source.lat!=null&&sx.source.lon!=null?esc(sx.source.lat)+", "+esc(sx.source.lon):'<span class="bad">No Lat/Lon</span>'} <small>(${esc(sx.sourceMatchMode||"")})</small>`:'<span class="bad">Gcell source not found</span>';
   return `<div class="group"><div class="ghead"><b>NR CELL ${esc(g.srcId)} / CONFLICT PCI ${esc(g.pci)}</b><span class="badge">${g.items.length} targets</span></div>
   <div class="notice" style="margin:10px 14px"><b>Source:</b> ${sourceInfo}</div>
-  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
-   <td>${esc(x.tg)}</td><td>${esc(x.tc)}</td><td>${esc(x.target?.nm||"N/A")}</td>
+  ${g.items.some(x=>!x.target) ? '<div class="pci-gcell-warning">⚠ <b>Gcell data incomplete.</b> No matching gNodeB ID + mapped Cell ID was found for one or more targets. Please update your Gcell data. No random Cell ID fallback is used.</div>' : ''}
+  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID (Gcell)</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
+   <td>${esc(x.tg)}</td><td>${esc(x.target?.cid||x.targetCellId||"N/A")}</td><td>${esc(x.target?.nm||"N/A")}</td>
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
    <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
   </tr>`).join("")}</tbody></table></div></div>`
@@ -426,7 +440,8 @@ function render(){
  groups.forEach(g=>{
   const x=g.far;if(!x)return;
   const mcc=norm(x.mcc),mnc=norm(x.mnc);
-  const cmd=`RMV NRCELLRELATION:NRCELLID=${x.srcId},MCC="${mcc}",MNC="${mnc}",GNBID=${x.tg},CELLID=${x.tc};`;
+  const targetCmdCellId=x.target?.cid||x.targetCellId;
+  const cmd=`RMV NRCELLRELATION:NRCELLID=${x.srcId},MCC="${mcc}",MNC="${mnc}",GNBID=${x.tg},CELLID=${targetCmdCellId};`;
   rmv.push(cmd);add.push(cmd.replace(/^RMV/,"ADD"));
  });
  commands.rmv=rmv.join("\n");commands.add=add.join("\n");
