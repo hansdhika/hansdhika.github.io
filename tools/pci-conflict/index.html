@@ -25,20 +25,63 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090e19;border:1px sol
 .hidden{display:none}.footer{color:#71809b;text-align:center;padding:25px;font-size:12px}
 @media(max-width:800px){.grid2,.command-grid,.stats{grid-template-columns:1fr}.container{padding:14px}table{font-size:12px}}
 </style>
+
+<style id="site-header-style">
+.site-header{
+  position:sticky;top:0;z-index:1000;
+  width:100%;box-sizing:border-box;
+  display:flex;align-items:center;gap:28px;
+  padding:16px 28px;
+  margin:0 0 24px;
+  background:rgba(10,10,12,.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.site-header .brand{
+  color:#fff;text-decoration:none;font-size:24px;font-weight:800;
+  letter-spacing:-.04em;
+}
+.site-nav{display:flex;align-items:center;gap:22px;flex:1}
+.site-nav a,.back-tools{
+  color:rgba(255,255,255,.72);text-decoration:none;
+  font-size:14px;font-weight:500;
+  transition:color .2s ease;
+}
+.site-nav a:hover,.back-tools:hover{color:#fff}
+.back-tools{margin-left:auto}
+@media(max-width:700px){
+  .site-header{padding:14px 18px;gap:14px}
+  .site-nav{gap:12px;overflow:auto;white-space:nowrap}
+  .site-nav a:nth-child(n+4){display:none}
+  .back-tools{display:none}
+}
+</style>
 </head>
 <body>
+<header class="site-header">
+  <a class="brand" href="https://hansdhika.github.io/">HD.</a>
+  <nav class="site-nav" aria-label="Main navigation">
+    <a href="https://hansdhika.github.io/">Home</a>
+    <a href="https://hansdhika.github.io/#tools">Tools</a>
+    <a href="https://hansdhika.github.io/#projects">Projects</a>
+    <a href="https://hansdhika.github.io/#about">About</a>
+    <a href="https://hansdhika.github.io/#contact">Contact</a>
+  </nav>
+  <a class="back-tools" href="https://hansdhika.github.io/">← Portfolio</a>
+</header>
+
 <div class="container">
-<div class="hero"><h1>⚡ 5G NR PCI Conflict Tool</h1><div class="sub">Analyze NRCELLPCICONFLICT → find farthest target per NR Cell + Conflict PCI → generate RMV + ADD fallback.</div></div>
+<div class="hero"><h1>⚡ 5G NR PCI Conflict Tool</h1><div class="sub">Analyze NRCELLPCICONFLICT → farthest target per NR Cell + Conflict PCI → generate RMV + ADD fallback.</div></div>
 
 <div class="card">
 <h3>STEP 1 — Input Files</h3>
 <div class="grid2">
-<label class="drop">📄<br><b>MML Report</b><br><small>Huawei TXT / Excel</small><input id="mml" type="file" accept=".txt,.log,.xlsx,.xls,.xlsm,.xlsb"></label>
+<label class="drop">📄<br><b>MML Report</b><br><small>Excel / XLSX / XLSM / XLSB</small><input id="mml" type="file" accept=".xlsx,.xls,.xlsm,.xlsb"></label>
 <label class="drop">📊<br><b>Gcell Data</b><br><small>CSV / Excel</small><input id="gcell" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb"></label>
 </div>
 <div id="files" class="file"></div>
 <div class="actions"><button id="analyze">🔍 Analyze PCI Conflict</button></div>
-<div class="notice">MML TXT should contain <b>DSP NRCELLPCICONFLICT</b> and <b>LST NRCELL</b> blocks, or Excel sheets with the same names. Gcell should contain gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After (or equivalent columns).</div>
+<div class="notice">TXT mode reads Huawei <b>DSP NRCELLPCICONFLICT</b> + <b>LST NRCELL</b> blocks directly. Excel mode uses sheets with the same names. Gcell supports CSV / Excel with gNodeB ID, Cell ID, Longitude, Latitude and Cell Name After.</div>
 </div>
 
 <div id="result" class="hidden">
@@ -50,7 +93,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#090e19;border:1px sol
 <div class="stat"><div class="num" id="sFar">0</div><div class="lbl">Farthest Selected</div></div>
 <div class="stat"><div class="num" id="sMissing">0</div><div class="lbl">Missing Coordinates</div></div>
 </div>
-<div style="overflow:auto;margin-top:14px"><table><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
+<div style="overflow:auto;margin-top:14px"><table><thead><tr><th>Source NR Cell</th><th>Conflict PCI</th><th>Targets</th><th>Farthest</th><th>Distance</th><th>Lookup</th><th>Status</th></tr></thead><tbody id="summary"></tbody></table></div>
 </div>
 
 <div class="card">
@@ -102,27 +145,68 @@ function excelDistance(lon1,lat1,lon2,lat2){
   return 6371*Math.acos(c);
 }
 function parseHuaweiMMLText(text){
-  const lines=text.replace(/\r/g,"").split("\n"), conflict=[], lst=[];
+  const lines=text.replace(/^\uFEFF/,"").replace(/\r/g,"").split("\n");
+  const conflict=[], lst=[];
   let mode="", ne="";
+  const conflictRe=/^(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s*$/;
+  const lstRe=/^(\d+)\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$/;
+
   for(let i=0;i<lines.length;i++){
     const t=lines[i].trim();
-    if(/^XCH_[^\s]+/i.test(t)) ne=t.split(/\s+/)[0];
-    if(/^DSP\s+NRCELLPCICONFLICT\s*:/i.test(t)){mode="conflict";continue}
-    if(/^LST\s+NRCELL\s*:/i.test(t)){mode="lst";continue}
-    if(mode==="conflict" && /^\d+\s+/.test(t)){
-      const a=t.split(/\s+/);
-      if(a.length>=9 && /^\d+$/.test(a[0])){
-        conflict.push({"NE_NAME":ne,"NR Cell ID":a[0],"PCI Conflict Type":a[1],
-          "Conflict Cell MCC":a[2],"Conflict Cell MNC":a[3],"Conflict Cell ID":a[4],
-          "Conflict Cell PCI":a[5],"Conflict Cell Base Station ID":a[6],
-          "Conflict Cell Downlink Frequency":a[7],"Conflict Cell RAT Type":a[8]});
+    if(!t) continue;
+
+    // Huawei MML export identifies the NE before each command block.
+    if(/^XCH_[^\s]+/i.test(t)){
+      ne=t.split(/\s+/)[0];
+      continue;
+    }
+
+    if(/^DSP\s+NRCELLPCICONFLICT\s*:/i.test(t)){
+      mode="conflict";
+      continue;
+    }
+
+    if(/^LST\s+NRCELL\s*:/i.test(t)){
+      mode="lst";
+      continue;
+    }
+
+    if(/^---\s+END/i.test(t)){
+      mode="";
+      continue;
+    }
+
+    if(mode==="conflict"){
+      const m=t.match(conflictRe);
+      if(m){
+        conflict.push({
+          "NE_NAME":ne,
+          "NR Cell ID":m[1],
+          "PCI Conflict Type":m[2].trim(),
+          "Conflict Cell MCC":m[3],
+          "Conflict Cell MNC":m[4],
+          "Conflict Cell ID":m[5],
+          "Conflict Cell PCI":m[6],
+          "Conflict Cell Base Station ID":m[7],
+          "Conflict Cell Downlink Frequency":m[8],
+          "Conflict Cell RAT Type":m[9]
+        });
       }
     }
-    if(mode==="lst" && /^\d+\s+/.test(t)){
-      const a=t.split(/\s+/);
-      if(a.length>=7 && /^\d+$/.test(a[0])){
-        lst.push({"NE_NAME":ne,"NR Cell ID":a[0],"Cell Name":a[1],"Cell ID":a[2],
-          "Frequency Band":a[3],"Duplex Mode":a[4],"User Label":a[5],"Cell Activate State":a[6]});
+
+    if(mode==="lst"){
+      const m=t.match(lstRe);
+      if(m){
+        lst.push({
+          "NE_NAME":ne,
+          "NR Cell ID":m[1],
+          "Cell Name":m[2],
+          "Cell ID":m[3],
+          "Frequency Band":m[4],
+          "Duplex Mode":m[5],
+          "User Label":m[6],
+          "Cell Activate State":m[7]
+        });
       }
     }
   }
@@ -144,11 +228,70 @@ function findSheet(wb,want){
  const exact=wb.SheetNames.find(s=>key(s)===key(want)); return exact?rows(wb,exact):[];
 }
 async function readGcell(file){
- const wb=await readWorkbook(file); const out=[];
- for(const sn of wb.SheetNames){
-   const r=rows(wb,sn); if(r.length) out.push(...r);
- }
- return out;
+  const name=file.name.toLowerCase();
+
+  if(name.endsWith(".csv")){
+    const text=await file.text();
+
+    // Huawei CSV exports may contain metadata/preamble before the real header.
+    // Locate the actual header by required Gcell fields instead of assuming row 1.
+    const rawLines=text.replace(/^\uFEFF/,"").replace(/\r/g,"").split("\n");
+    let headerIdx=-1;
+
+    for(let i=0;i<rawLines.length;i++){
+      const line=rawLines[i].trim();
+      const low=line.toLowerCase();
+      if(
+        low.includes("gnodeb id") &&
+        (low.includes("cell id") || low.includes("local cell id")) &&
+        low.includes("longitude") &&
+        low.includes("latitude") &&
+        (low.includes("cell name after") || low.includes("cell name"))
+      ){
+        headerIdx=i;
+        break;
+      }
+    }
+
+    if(headerIdx<0){
+      // Some exports use slightly different spelling/case.
+      for(let i=0;i<rawLines.length;i++){
+        const low=rawLines[i].toLowerCase();
+        const hits=[
+          /g\s*node\s*b\s*id/.test(low),
+          /local\s*cell\s*id|cell\s*id/.test(low),
+          /long(itude)?/.test(low),
+          /lat(itude)?/.test(low)
+        ].filter(Boolean).length;
+        if(hits>=4){ headerIdx=i; break; }
+      }
+    }
+
+    if(headerIdx<0){
+      throw new Error("Gcell CSV header tidak ditemukan. Pastikan header berisi gNodeB ID, Cell ID, Longitude dan Latitude.");
+    }
+
+    const body=rawLines.slice(headerIdx).join("\n");
+
+    // Let SheetJS detect the delimiter/quoting from the actual CSV body.
+    const wb=XLSX.read(body,{type:"string",raw:false});
+    const sh=wb.Sheets[wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(sh,{defval:""});
+
+    if(!data.length){
+      throw new Error("Gcell CSV terbaca tetapi tidak memiliki data setelah header.");
+    }
+
+    return data;
+  }
+
+  const wb=await readWorkbook(file);
+  const out=[];
+  for(const sn of wb.SheetNames){
+    const r=rows(wb,sn);
+    if(r.length) out.push(...r);
+  }
+  return out;
 }
 function csvRead(file){
  return new Promise((resolve,reject)=>{
@@ -163,20 +306,65 @@ analyze.onclick=async()=>{
   const mmlData=await readMMLFile(mmlFile);
   const conflict=mmlData.conflict;
   const lst=mmlData.lst;
-  if(!conflict.length)throw new Error("DSP NRCELLPCICONFLICT data not found in MML report.");
+  if(!conflict.length)throw new Error("DSP NRCELLPCICONFLICT data not found in MML report. Check that the TXT contains the Huawei DSP NRCELLPCICONFLICT table.");
+  if(!lst.length)throw new Error("LST NRCELL data not found in MML report. Check that the TXT contains the Huawei LST NRCELL table.");
   const gc=await readGcell(gcellFile);
   if(!gc.length)throw new Error("Gcell data is empty.");
 
-  // Gcell indexes: primary target lookup by gNodeB ID + Cell ID.
-  const gByGnbCell=new Map(), gByName=new Map();
+  // Site-aware name normalization for TXT -> LST -> Gcell.
+  // Do NOT use Cell ID alone: it is not unique across sites.
+  function sourceSignature(name){
+    const x=normCell(name);
+    // Prefer the stable cell suffix, e.g. _N23_531_MM.
+    const m=x.match(/(?:^|_)(N\d+_\d+_MM)$/i);
+    if(m) return m[1].toUpperCase();
+    // Secondary signature: last 3 underscore-separated tokens.
+    const p=x.split("_").filter(Boolean);
+    return p.length>=3 ? p.slice(-3).join("_").toUpperCase() : x.toUpperCase();
+  }
+
+  function siteAwareGcellMatch(srcName){
+    if(!srcName) return null;
+    const exact=gByName.get(normCell(srcName));
+    if(exact) return exact;
+
+    const sig=sourceSignature(srcName);
+    if(!sig) return null;
+
+    // Only accept a signature if it resolves to exactly one Gcell row.
+    const matches=[];
+    for(const [key,obj] of gByName.entries()){
+      if(sourceSignature(key)===sig) matches.push(obj);
+    }
+    if(matches.length===1) return matches[0];
+
+    return null;
+  }
+
+  // Gcell indexes.
+  // IMPORTANT: source lookup is intentionally NOT indexed by Cell ID alone.
+  // Cell IDs repeat across sites, so source must resolve:
+  // NE_NAME + NR Cell ID -> LST Cell Name -> Gcell Cell Name After.
+  const gByGnbCell=new Map(), gByName=new Map(), gByCell=new Map();
+
   for(const r of gc){
-    const gnb=norm(pick(r,["gNodeB ID","GNBID","gNodeB ID NR"]));
+    const gnb=norm(pick(r,["gNodeB ID","GNBID","gNodeB ID NR","gNodeB ID-NR"]));
     const cid=norm(pick(r,["Cell ID","Local Cell ID","CELLID"]));
+    const local=norm(pick(r,["Local Cell ID","Cell ID","CELLID"]));
     const nm=norm(pick(r,["Cell Name After","Cell Name","NR Cell Name"]));
-    const c=coord(r,["Latitude","Lat"],["Longitude","Long","Lon"]);
-    const obj={gnb,cid,nm,...c,row:r};
-    if(gnb&&cid)gByGnbCell.set(gnb+"|"+cid,obj);
+    const c=coord(r,["Latitude","Lat","LAT"],["Longitude","Long","Lon","LONG"]);
+    const obj={gnb,cid,local,nm,...c,row:r};
+
+    if(gnb&&cid)gByGnbCell.set(normKey(gnb)+"|"+normKey(cid),obj);
+    if(gnb&&local)gByGnbCell.set(normKey(gnb)+"|"+normKey(local),obj);
     if(nm)gByName.set(normCell(nm),obj);
+
+    // Kept only for target fallback. NEVER use this for source lookup.
+    if(cid&&!gByCell.has(normKey(cid)))gByCell.set(normKey(cid),obj);
+  }
+
+  function normKey(v){
+    return norm(v).replace(/\.0+$/,"").replace(/\s+/g,"");
   }
 
   // LST NRCELL source lookup: NE_NAME + NR Cell ID -> Cell Name.
@@ -198,22 +386,30 @@ analyze.onclick=async()=>{
     const mcc=norm(pick(r,["Conflict Cell MCC","MCC"]));
     const mnc=norm(pick(r,["Conflict Cell MNC","MNC"]));
     const srcName=lstMap.get(ne+"|"+srcId)||"";
-    let source=gByName.get(normCell(srcName));
-    // fallback: if exact cell name misses, try source gNodeB ID if it exists in NE_NAME text.
-    if(!source){
-      const m=ne.match(/\b(\d{5,})\b/);
-      if(m){
-        for(const x of gc){
-          const g=norm(pick(x,["gNodeB ID","GNBID"]));
-          if(g===m[1]){
-            const lc=norm(pick(x,["Local Cell ID","Cell ID","CELLID"]));
-            if(lc===srcId){source={gnb:g,cid:lc,nm:norm(pick(x,["Cell Name After","Cell Name"])),...coord(x,["Latitude","Lat"],["Longitude","Long","Lon"]),row:x};break}
-          }
-        }
-      }
+
+    // STRICT SOURCE LOOKUP:
+    // 1) Source NE_NAME + NR Cell ID must resolve to LST NRCELL Cell Name.
+    // 2) That exact normalized Cell Name must resolve to Gcell Cell Name After.
+    // NO Cell-ID-only fallback is allowed for source.
+    let source=null;
+    if(srcName){
+      source=siteAwareGcellMatch(srcName);
     }
-    const target=gByGnbCell.get(tg+"|"+tc);
-    temp.push({ne,srcId,pci,tg,tc,mcc,mnc,srcName,source,target,raw:r});
+
+    // TARGET LOOKUP:
+    // Primary key is Conflict Base Station ID + Conflict Cell ID.
+    // Cell-ID-only fallback remains allowed for target only.
+    let target=gByGnbCell.get(normKey(tg)+"|"+normKey(tc))||null;
+    if(!target) target=gByCell.get(normKey(tc))||null;
+
+    const sourceMatchMode = source ? (
+      gByName.get(normCell(srcName)) ? "EXACT" : "SITE-AWARE"
+    ) : "NONE";
+
+    temp.push({
+      ne,srcId,pci,tg,tc,mcc,mnc,srcName,source,target,
+      sourceMatch:!!source,targetMatch:!!target,sourceMatchMode,raw:r
+    });
   }
 
   // CRITICAL GROUPING: Source NE + Source NR Cell ID + Conflict PCI.
@@ -245,7 +441,10 @@ function render(){
  sGroups.textContent=groups.length;sTargets.textContent=targets;sFar.textContent=groups.filter(g=>g.far).length;sMissing.textContent=missing;
  summary.innerHTML=groups.map(g=>{
   const d=g.far?g.far.distance.toFixed(3)+" km":"N/A";
-  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
+  const srcOK=g.items.every(x=>x.sourceMatch&&x.source?.lat!=null&&x.source?.lon!=null);
+  const tgtOK=g.items.every(x=>x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null);
+  const lk=(srcOK?"S✓":"S✕")+" "+(tgtOK?"T✓":"T✕");
+  return `<tr><td>${esc(g.srcId)}</td><td>${esc(g.pci)}</td><td>${g.items.length}</td><td>${g.far?esc(g.far.tg):"N/A"}</td><td>${d}</td><td>${lk}</td><td>${g.far?'<span class="ok">✓ Ready</span>':'<span class="bad">✕ No coordinate</span>'}</td></tr>`
  }).join("");
  document.getElementById("groups").innerHTML=groups.map((g,i)=>{
   const rows=g.items.map(x=>`<tr>
@@ -253,8 +452,16 @@ function render(){
    <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
    <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
   </tr>`).join("");
+  const sx=g.items[0];
+  const sourceInfo=sx.source?`${esc(sx.srcName||sx.source.nm||"")} → ${sx.source.lat!=null&&sx.source.lon!=null?esc(sx.source.lat)+", "+esc(sx.source.lon):'<span class="bad">No Lat/Lon</span>'} <small>(${esc(sx.sourceMatchMode||"")})</small>`:'<span class="bad">Gcell source not found</span>';
   return `<div class="group"><div class="ghead"><b>NR CELL ${esc(g.srcId)} / CONFLICT PCI ${esc(g.pci)}</b><span class="badge">${g.items.length} targets</span></div>
-  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${rows}</tbody></table></div></div>`
+  <div class="notice" style="margin:10px 14px">Source (strict): ${sourceInfo} &nbsp; | &nbsp; Target lookup: ${g.items.filter(x=>x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null).length}/${g.items.length} matched</div>
+  <div style="padding:8px 14px;overflow:auto"><table><thead><tr><th>Target gNodeB</th><th>Target Cell ID</th><th>Cell Name</th><th>Target Lookup</th><th>Distance</th><th>Selection</th></tr></thead><tbody>${g.items.map(x=>`<tr>
+   <td>${esc(x.tg)}</td><td>${esc(x.tc)}</td><td>${esc(x.target?.nm||"N/A")}</td>
+   <td>${x.targetMatch&&x.target?.lat!=null&&x.target?.lon!=null?'<span class="ok">✓</span>':'<span class="bad">✕</span>'}</td>
+   <td>${x.distance==null?'<span class="bad">N/A</span>':x.distance.toFixed(3)+" km"}</td>
+   <td>${g.far===x?'<span class="star">★ FARTHEST</span>':""}</td>
+  </tr>`).join("")}</tbody></table></div></div>`
  }).join("");
 
  const rmv=[],add=[];
