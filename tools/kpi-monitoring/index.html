@@ -9,8 +9,8 @@
   </title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
    :root{--bg:#fff;--card:#fff;--text:#171717;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#15803d;--bad:#dc2626;--warn:#b45309;--soft:#f7f7f5}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.5}
@@ -32,6 +32,25 @@
 .hour-filter.is-disabled{opacity:.52}
 .hour-filter.is-disabled input{background:#f7f7f5;cursor:not-allowed}
 .hour-filter-note{font-size:10px;color:#9ca3af;margin-top:4px}
+
+
+.trend-layout-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.trend-layout-controls .layout-select{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.trend-layout-controls select{width:auto;min-width:150px}
+.trend-grid{display:grid;grid-template-columns:repeat(var(--trend-cols,3),minmax(0,1fr));gap:14px;align-items:stretch}
+.trend-card{min-width:0;margin:0;padding:14px;display:flex;flex-direction:column}
+.trend-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.trend-card-head h3{margin:0;font-size:14px}
+.trend-actions{display:flex;gap:6px}
+.trend-actions button{width:auto;padding:5px 8px;font-size:11px}
+.trend-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.trend-settings label{margin-bottom:4px}
+.trend-settings .wide{grid-column:1/-1}
+.trend-chartbox{height:280px;min-height:220px;position:relative}
+.trend-card:fullscreen{background:var(--card,#fff);padding:24px;overflow:auto}.trend-card:fullscreen .trend-chartbox{height:calc(100vh - 260px);min-height:400px}.trend-card.trend-expanded{position:fixed;inset:12px;z-index:9999;background:var(--card,#fff);padding:24px;overflow:auto;box-shadow:0 0 0 9999px rgba(0,0,0,.55)}.trend-card.trend-expanded .trend-chartbox{height:calc(100vh - 260px);min-height:400px}
+.trend-meta{font-size:10px;color:var(--muted);margin:0 0 8px;min-height:15px}
+@media(max-width:1050px){.trend-grid{grid-template-columns:repeat(min(var(--trend-cols,3),2),minmax(0,1fr))}}
+@media(max-width:650px){.trend-grid{grid-template-columns:1fr}.trend-chartbox{height:300px}.trend-settings{grid-template-columns:1fr}}
 
 </style>
   <meta content="Hans Dhika portfolio and tools" name="description"/>
@@ -281,16 +300,7 @@
       </label>
       <input id="after" type="date"/>
      </div>
-     <div>
-      <label>
-       Metric
-      </label>
-      <select id="metric">
-       <option value="">
-        Auto detect after upload
-       </option>
-      </select>
-     </div>
+     <select id="metric" hidden aria-hidden="true"><option value=""></option></select>
     </div>
     <div class="grid4" style="margin-top:10px">
      <div class="hour-filter" id="startHourWrap">
@@ -299,7 +309,7 @@
      </div>
      <div class="hour-filter" id="endHourWrap">
       <label id="endHourLabel">End Hour</label>
-      <input id="hend" type="time" value="23:00"/>
+      <input id="hend" type="time" value="23:59"/>
      </div>
      <div>
       <label>
@@ -391,32 +401,6 @@
     </div>
     <div class="grid4" style="margin-top:10px">
      <div>
-      <label>
-       Trend Level
-      </label>
-      <select id="trendLevel">
-       <option value="SITE">
-        Site
-       </option>
-       <option value="BAND">
-        Band
-       </option>
-       <option selected="" value="CELL">
-        Cell
-       </option>
-       <option value="SECTORAL">
-        Sectoral
-       </option>
-      </select>
-     </div>
-     <div style="grid-column:span 3">
-      <div class="status" id="trendInfo" style="margin-top:23px">
-       Trend grouping: Cell
-      </div>
-     </div>
-    </div>
-    <div class="grid4" style="margin-top:10px">
-     <div>
       <label>Trend Source</label>
       <select id="trendSource">
        <option value="AUTO">Auto / Recommended</option>
@@ -428,11 +412,6 @@
      <div style="grid-column:span 3">
       <div class="status" id="trendSourceInfo" style="margin-top:23px">Trend source follows the selected data type.</div>
      </div>
-    </div>
-    <div style="margin-top:12px">
-     <button id="analyze">
-      ANALYZE
-     </button>
     </div>
    </div>
    <div class="cards">
@@ -478,15 +457,23 @@
     </div>
    </div>
    <div class="card">
-    <h3>
-     Trend Analysis
-     <span class="status" id="trendDates" style="font-weight:400;margin-left:8px">
-     </span>
-    </h3>
-    <div class="chartbox">
-     <canvas id="trend">
-     </canvas>
+    <div class="trend-layout-controls">
+     <div>
+      <h3 style="margin:0 0 3px">Hourly Trend Charts</h3>
+      <div class="status">Each trend has independent KPI, site, grouping, chart type and axis settings.</div>
+     </div>
+     <div class="layout-select"><label for="trendColumns" style="margin:0">Desktop columns</label><select id="trendColumns"><option value="auto">Auto (max 3)</option><option value="1">1 column</option><option value="2">2 columns</option><option value="3">3 columns</option><option value="4">4 columns</option></select></div>
     </div>
+    <div class="trend-grid" id="trendGrid" style="--trend-cols:3"></div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="secondary" id="addTrend" type="button">+ Add Trend</button><button type="button" id="exportAllTrends">Export All Trends (XLSX + Charts)</button></div>
+   </div>
+   <div class="card" style="margin-bottom:12px">
+    <label for="wpcMetric"><b>WPC Counter / KPI</b></label>
+    <select id="wpcMetric">
+     <option value="">Auto detect after upload</option>
+    </select>
+    <small>Independent from Hourly Trend KPI settings. WPC remains at Cell level.</small>
+    <div style="margin-top:10px"><button id="wpcAnalyze" type="button" class="secondary">ANALYZE WPC</button></div>
    </div>
    <div class="two">
     <div class="card">
@@ -612,6 +599,10 @@
 document.querySelectorAll('#nav a').forEach(a=>a.addEventListener('click',()=>document.getElementById('nav').classList.remove('open')));
 const state={data:{},ssv:{tech:'',BH:null,WD:null,OPH:null,sheets:{}}};
 let chart=null;
+let trendCharts={};
+let trendExportData={};
+let trendConfigs=[];
+let nextTrendId=1;
 
 function clean(x){return String(x??'').trim()}
 function findHeader(rows){
@@ -692,14 +683,14 @@ function bandFromCell(v){
   const m=s.match(/(?:^|[^A-Z0-9])(?:4G|5G)(\d{2})(?:[^0-9]|$)/) || s.match(/(?:4G|5G)(\d{2})/);
   if(!m)return 'UNKNOWN';
   const code=m[1];
-  const map={'07':'700','08':'800','09':'900','18':'1800','19':'1900','21':'2100','23':'2300','26':'2600','28':'2800','35':'3500','37':'3700','39':'3900','40':'4000'};
+  const map={'07':'700','08':'800','09':'900','18':'1800','85':'850','19':'1900','21':'2100','23':'2300','26':'2600','28':'2800','35':'3500','37':'3700','39':'3900','40':'4000'};
   return map[code]||code;
 }
-function bandFromRow(r,headers){
+function bandFromRow(r,headers,cellValue){
   const bc=bandCol(headers||[]);
   const explicit=clean(bc?r[bc]:'');
   if(explicit){ const m=explicit.match(/(\d{3,4})/); if(m)return m[1]; const n=explicit.toLowerCase().replace(/^n/,''); if(/^\d+$/.test(n))return n; }
-  return bandFromCell(r?.__cell||'');
+  return bandFromCell(cellValue ?? r?.__cell ?? r?.cell ?? '');
 }
 function technologyFromCell(v){
   const s=clean(v).toUpperCase();
@@ -921,8 +912,16 @@ function updateMetricBand(){
     document.getElementById('band').innerHTML='<option>ALL</option>';
     return;
   }
-  const ms=numericColumns(obj), sel=document.getElementById('metric');
-  sel.innerHTML=ms.length?ms.map(x=>`<option>${x.replaceAll('<','&lt;')}</option>`).join(''):'<option value="">No numeric metric found</option>';
+  const ms=numericColumns(obj), sel=document.getElementById('metric'), wpcSel=document.getElementById('wpcMetric');
+  const prevMetric=sel.value, prevWpcMetric=wpcSel?.value;
+  const options=ms.length?ms.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''):'<option value="">No numeric metric found</option>';
+  sel.innerHTML=options;
+  if(prevMetric && ms.includes(prevMetric)) sel.value=prevMetric;
+  if(wpcSel){
+    wpcSel.innerHTML=options;
+    if(prevWpcMetric && ms.includes(prevWpcMetric)) wpcSel.value=prevWpcMetric;
+    else if(ms.length) wpcSel.value=ms.includes(prevMetric)?prevMetric:ms[0];
+  }
   document.getElementById('aggregation').value='AUTO';
   setDates(obj);
   updateHourControls(obj);
@@ -1082,13 +1081,13 @@ function updateHourControls(obj){
   return enabled;
 }
 
-function analyze(){
+function analyze(mode="all"){
   const name=document.getElementById('dataset').value,obj=getDataset(name);
   if(!name){alert('Upload at least one dataset first.');return}
   if(name==='5G PLMN' && !datasetReady('5G PLMN')){alert('5G PLMN requires both #1 and #2 files.');return}
   if(!obj){alert('Selected dataset is not available.');return}
   if(!obj.headers.some(c=>/^time$/i.test(c)) && !obj.headers.some(c=>/date.*time|time.*date|timestamp/i.test(c)) && !obj.headers.some(c=>/^date$/i.test(c))){alert('Date/Time column not detected.');return}
-  const metric=document.getElementById('metric').value;if(!metric){alert('No metric selected.');return}
+  const metric=document.getElementById('wpcMetric').value;if(!metric){alert('Please select a WPC Counter / KPI.');return}
   const pair=metricPair(obj,metric);
   const cell=cellCol(obj.headers);if(!cell){alert('Cell/identity column not detected.');return}
   const ne=neCol(obj.headers);
@@ -1098,11 +1097,22 @@ function analyze(){
   const hs=hourEnabled?Number(document.getElementById('hstart').value.slice(0,2)):0;
   const he=hourEnabled?Number(document.getElementById('hend').value.slice(0,2)):23;
   const level=document.getElementById('level').value;
-  const site=document.getElementById('siteSelect').value;
+  const siteSelect=document.getElementById('siteSelect');
+  // The global Site selector is optional for multi-trend mode:
+  // if it is empty, use the first trend's configured site as the main-analysis fallback.
+  let site=siteSelect.value;
+  if(!site){
+    const firstTrendSite=trendConfigs.find(t=>t.site && [...siteSelect.options].some(o=>o.value===t.site))?.site;
+    if(firstTrendSite){
+      siteSelect.value=firstTrendSite;
+      updateScopeSelect();
+      site=siteSelect.value;
+    }
+  }
   const scopeValues=[...document.getElementById('scopeSelect').selectedOptions].map(o=>o.value);
   const scope=scopeValues.includes('ALL')?'ALL':scopeValues;
   const siteRows=obj.rows.filter(r=>clean(ne?r[ne]:'')===site).map(r=>({...r,__cell:clean(r[cell]),__headers:obj.headers}));
-  if(!site){alert('Please select a site first.');return}
+  if(!site){alert('Please select a site in the main filter or configure a valid site in Trend 1.');return}
   if((level==='BAND'||level==='CELL')&&!scopeValues.length){alert(`Please select a ${level.toLowerCase()} or use ${level==='BAND'?'All Bands':'All Cells'}.`);return}
   const requestedAgg=document.getElementById('aggregation').value;
   const aggType=requestedAgg==='AUTO'?aggregationType(obj,metric):requestedAgg;
@@ -1126,7 +1136,7 @@ function analyze(){
       if(!Number.isFinite(num))num=null;if(!Number.isFinite(den))den=null;
     }
     if(!hasValue && !usePair)return;
-    filtered.push({r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'')||'—',band:bandFromRow(r,obj.headers),v:hasValue?v:null,num,den});
+    filtered.push({r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'')||'—',band:bandFromRow(r,obj.headers,clean(r[cell])),v:hasValue?v:null,num,den});
   });
 
   if(!filtered.length){alert(hourEnabled?'No rows match the selected dates, hours and scope.':'No rows match the selected dates and scope.');return}
@@ -1172,98 +1182,244 @@ function analyze(){
   document.getElementById('worst').innerHTML=worst.map((x,i)=>tr({...x,rank:i+1})).join('');
   document.getElementById('best').innerHTML=best.map((x,i)=>tr({...x,rank:i+1})).join('');
 
-  // Trend: preserve the full chronological date/hour range between Before and After.
-  // At SITE/BAND level, plot one line per cell (Excel/PivotChart-like behavior).
-  // WPC still compares only the two endpoint dates selected above.
-  const trendChoice=document.getElementById('trendSource').value;
+  if(mode!=='wpc') renderTrendCharts({name,obj,bd,ad,hs,he,siteRows,cell,ne,level,site,scope,trendSource:document.getElementById('trendSource').value});
+  document.getElementById('status').textContent=`${name}: ${rows.length.toLocaleString()} cells analyzed · Site ${site}${level!=='SITE'?` · ${level} ${scope==='ALL'?'ALL':scopeValues.join(', ')}`:''} · trend charts ${trendConfigs.length}`;
+}
+
+function trendMetricOptions(selected){
+  const source=document.getElementById('metric');
+  return [...source.options].filter(o=>o.value).map(o=>`<option value="${esc(o.value)}" ${o.value===selected?'selected':''}>${esc(o.textContent)}</option>`).join('');
+}
+function trendSiteOptions(selected){
+  const source=document.getElementById('siteSelect');
+  return [...source.options].filter(o=>o.value).map(o=>`<option value="${esc(o.value)}" ${o.value===selected?'selected':''}>${esc(o.textContent)}</option>`).join('');
+}
+function trendCellOptions(t){
+  const name=document.getElementById('dataset').value,obj=getDataset(name);
+  if(!obj)return '<option value="ALL">All Cells</option>';
+  const site=t.site||document.getElementById('siteSelect').value;
+  const ncol=neCol(obj.headers),ccol=cellCol(obj.headers);
+  if(!ccol)return '<option value="ALL">All Cells</option>';
+  const cells=[...new Set(obj.rows.filter(r=>!ncol||clean(r[ncol])===site).map(r=>clean(r[ccol])).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const selected=Array.isArray(t.scope)&&t.scope.length?t.scope:['ALL'];
+  return `<option value="ALL" ${selected.includes('ALL')?'selected':''}>All Cells</option>`+cells.map(v=>`<option value="${esc(v)}" ${selected.includes(v)?'selected':''}>${esc(v)}</option>`).join('');
+}
+function addTrendConfig(seed={}){
+  const id=nextTrendId++;
+  trendConfigs.push({id,metric:seed.metric||document.getElementById('metric').value||'',site:seed.site||document.getElementById('siteSelect').value||'',level:seed.level||'CELL',scope:seed.scope||['ALL'],aggregation:seed.aggregation||'AUTO',chartType:seed.chartType||'line',axis:seed.axis||'left',smooth:seed.smooth!==false,markers:seed.markers!==false});
+  renderTrendCards();
+}
+function removeTrendConfig(id){delete trendExportData[id];
+  if(trendCharts[id]){trendCharts[id].destroy();delete trendCharts[id];}
+  trendConfigs=trendConfigs.filter(t=>t.id!==id);renderTrendCards();
+}
+function renderTrendCards(){
+  const grid=document.getElementById('trendGrid');if(!grid)return;
+  const sel=document.getElementById('trendColumns')?.value||'auto';
+  const cols=Math.min(trendConfigs.length||1,sel==='auto'?3:Number(sel));
+  grid.style.setProperty('--trend-cols',String(cols));
+  Object.values(trendCharts).forEach(c=>c.destroy());trendCharts={};
+  grid.innerHTML=trendConfigs.map((t,i)=>`<section class="card trend-card" data-trend-id="${t.id}">
+    <div class="trend-card-head"><h3>Trend ${i+1}</h3><div class="trend-actions"><button type="button" data-action="analyze-trend" data-id="${t.id}">Analyze Trend</button><button type="button" class="secondary" data-action="export-trend" data-id="${t.id}">Export XLSX</button><button type="button" class="secondary" data-action="fullscreen" data-id="${t.id}">Full size</button><button type="button" class="secondary" data-action="duplicate" data-id="${t.id}">Duplicate</button><button type="button" class="secondary" data-action="delete" data-id="${t.id}">Delete</button></div></div>
+    <div class="trend-settings">
+      <div class="wide"><label>Counter / KPI</label><select data-field="metric" data-id="${t.id}">${trendMetricOptions(t.metric)}</select></div>
+      <div class="wide"><label>Site</label><select data-field="site" data-id="${t.id}">${trendSiteOptions(t.site)}</select></div>
+      <div class="wide"><label>Cell filter (multi-select)</label><select class="multi" multiple size="4" data-field="scope" data-id="${t.id}">${trendCellOptions(t)}</select><small>Choose All Cells or one/more cells for this trend only.</small></div>
+      <div><label>Aggregation</label><select data-field="aggregation" data-id="${t.id}"><option value="AUTO" ${t.aggregation==='AUTO'?'selected':''}>Auto / Default</option><option value="SUM" ${t.aggregation==='SUM'?'selected':''}>Sum</option><option value="AVERAGE" ${t.aggregation==='AVERAGE'?'selected':''}>Average</option><option value="MIN" ${t.aggregation==='MIN'?'selected':''}>Min</option><option value="MAX" ${t.aggregation==='MAX'?'selected':''}>Max</option><option value="COUNT" ${t.aggregation==='COUNT'?'selected':''}>Count</option></select></div>
+      <div><label>Trend Level</label><select data-field="level" data-id="${t.id}"><option value="SITE" ${t.level==='SITE'?'selected':''}>Site</option><option value="BAND" ${t.level==='BAND'?'selected':''}>Band</option><option value="CELL" ${t.level==='CELL'?'selected':''}>Cell</option><option value="SECTORAL" ${t.level==='SECTORAL'?'selected':''}>Sectoral</option></select></div>
+      <div><label>Chart Type</label><select data-field="chartType" data-id="${t.id}"><option value="line" ${t.chartType==='line'?'selected':''}>Line</option><option value="area" ${t.chartType==='area'?'selected':''}>Area</option><option value="bar" ${t.chartType==='bar'?'selected':''}>Bar</option><option value="stepped" ${t.chartType==='stepped'?'selected':''}>Step Line</option></select></div>
+      <div><label>Y-Axis Position</label><select data-field="axis" data-id="${t.id}"><option value="left" ${t.axis==='left'?'selected':''}>Primary · Left</option><option value="right" ${t.axis==='right'?'selected':''}>Secondary · Right</option></select></div>
+      <div><label>Line style</label><select data-field="smooth" data-id="${t.id}"><option value="smooth" ${t.smooth?'selected':''}>Smooth</option><option value="straight" ${!t.smooth?'selected':''}>Straight</option></select></div>
+      <div><label>Point markers</label><select data-field="markers" data-id="${t.id}"><option value="on" ${t.markers?'selected':''}>Show</option><option value="off" ${!t.markers?'selected':''}>Hide</option></select></div>
+    </div>
+    <div class="trend-meta" id="trendMeta-${t.id}">Run Analyze to render this trend.</div>
+    <div class="trend-chartbox"><canvas id="trendCanvas-${t.id}"></canvas></div>
+   </section>`).join('');
+  grid.querySelectorAll('select[data-field]').forEach(el=>el.addEventListener('change',()=>{
+    const t=trendConfigs.find(x=>x.id===Number(el.dataset.id));if(!t)return;
+    const f=el.dataset.field,v=el.value;
+    if(f==='scope'){
+      t.scope=[...el.selectedOptions].map(o=>o.value);
+      if(t.scope.includes('ALL'))t.scope=['ALL'];
+      else t.scope=t.scope.filter(x=>x!=='ALL');
+    }else if(f==='site'){
+      t.site=v;t.scope=['ALL'];
+      const card=el.closest('.trend-card'),scopeSel=card?.querySelector('select[data-field="scope"]');
+      if(scopeSel)scopeSel.innerHTML=trendCellOptions(t);
+    }else if(f==='smooth')t.smooth=v==='smooth';
+    else if(f==='markers')t.markers=v==='on';
+    else t[f]=v;
+    if(window.__lastTrendContext)renderOneTrend(t,window.__lastTrendContext);
+  }));
+  grid.querySelectorAll('button[data-action]').forEach(el=>el.addEventListener('click',()=>{
+    const id=Number(el.dataset.id),t=trendConfigs.find(x=>x.id===id);if(!t)return;
+    if(el.dataset.action==='analyze-trend')analyzeSingleTrend(id);
+    else if(el.dataset.action==='export-trend')exportTrendXlsx(id);
+    else if(el.dataset.action==='delete'){delete trendExportData[id];removeTrendConfig(id);}
+
+    else if(el.dataset.action==='duplicate')addTrendConfig({...t,id:undefined});
+    else if(el.dataset.action==='fullscreen'){
+      const card=el.closest('.trend-card');
+      if(card){
+        if(card.classList.contains('trend-expanded')) card.classList.remove('trend-expanded');
+        else if(document.fullscreenElement===card) document.exitFullscreen?.();
+        else {
+          const req=card.requestFullscreen?.();
+          if(req&&typeof req.catch==='function')req.catch(()=>card.classList.add('trend-expanded'));
+          else if(!card.requestFullscreen)card.classList.add('trend-expanded');
+        }
+        setTimeout(()=>trendCharts[id]?.resize(),100);
+      }
+    }
+  }));
+  if(window.__lastTrendContext)renderTrendCharts(window.__lastTrendContext);
+}
+function makeTrendWorkbook(payload){
+  const wb=XLSX.utils.book_new();
+  const settingsRows=Object.entries(payload.settings).map(([Setting,Value])=>({Setting,Value}));
+  const wsSettings=XLSX.utils.json_to_sheet(settingsRows);
+  const wsChart=XLSX.utils.json_to_sheet(payload.chartRows);
+  const wsSource=XLSX.utils.json_to_sheet(payload.sourceRows);
+  wsSettings['!cols']=[{wch:24},{wch:50}];
+  wsChart['!cols']=[{wch:22},...Object.keys(payload.chartRows[0]||{}).slice(1).map(()=>({wch:24}))];
+  wsSource['!cols']=[{wch:22},{wch:14},{wch:10},{wch:42},{wch:32},{wch:12},{wch:32},{wch:16},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,wsSettings,'Trend Settings');
+  XLSX.utils.book_append_sheet(wb,wsChart,'Chart Data');
+  XLSX.utils.book_append_sheet(wb,wsSource,'Source Rows');
+  return wb;
+}
+function trendSafeName(payload,id){
+  const safe=String(payload?.settings?.KPI||'KPI').replace(/[\\/:*?"<>|]+/g,'_').slice(0,40);
+  return `KPI_Trend_${id}_${safe}`;
+}
+function chartPngBlob(trendId){
+  const canvas=document.getElementById(`trendCanvas-${trendId}`);
+  if(!canvas||!trendCharts[trendId])return null;
+  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),'image/png'));
+}
+async function exportTrendXlsx(trendId){
+  const payload=trendExportData[trendId];
+  if(!payload){alert('Please click Analyze Trend for this trend before exporting.');return;}
+  if(typeof XLSX==='undefined'){alert('XLSX export library is unavailable. Check your internet connection and reload the page.');return;}
+  const wb=makeTrendWorkbook(payload),base=trendSafeName(payload,trendId);
+  XLSX.writeFile(wb,`${base}.xlsx`);
+  const png=await chartPngBlob(trendId);
+  if(png){
+    const a=document.createElement('a'),url=URL.createObjectURL(png);
+    a.href=url;a.download=`${base}_Chart.png`;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+}
+async function exportAllTrends(){
+  const ready=trendConfigs.filter(t=>trendExportData[t.id]);
+  if(!ready.length){alert('Analyze at least one trend before using Export All.');return;}
+  if(typeof XLSX==='undefined'||typeof JSZip==='undefined'){alert('Export libraries are unavailable. Check your internet connection and reload the page.');return;}
+  const zip=new JSZip();
+  for(const t of ready){
+    const payload=trendExportData[t.id],base=trendSafeName(payload,t.id);
+    const wb=makeTrendWorkbook(payload);
+    zip.file(`${base}.xlsx`,XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+    const png=await chartPngBlob(t.id);
+    if(png)zip.file(`${base}_Chart.png`,png);
+  }
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a'),url=URL.createObjectURL(blob);
+  a.href=url;a.download='KPI_All_Trends_Export.zip';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  alert(`Exported ${ready.length} analyzed trend(s). ZIP contains each XLSX workbook and chart PNG.`);
+}
+
+function analyzeSingleTrend(trendId){
+  const t=trendConfigs.find(x=>x.id===Number(trendId));
+  if(!t){alert('Trend configuration not found.');return;}
+  const name=document.getElementById('dataset').value,obj=getDataset(name);
+  if(!name){alert('Upload at least one dataset first.');return;}
+  if(name==='5G PLMN' && !datasetReady('5G PLMN')){alert('5G PLMN requires both #1 and #2 files.');return;}
+  if(!obj){alert('Selected dataset is not available.');return;}
+  if(!obj.headers.some(c=>/^time$/i.test(c))&&!obj.headers.some(c=>/date.*time|time.*date|timestamp/i.test(c))&&!obj.headers.some(c=>/^date$/i.test(c))){alert('Date/Time column not detected.');return;}
+  const bd=document.getElementById('before').value,ad=document.getElementById('after').value;
+  if(!bd||!ad){alert('Please select Before Date and After Date.');return;}
+  const hourEnabled=hasHourDimension(obj);
+  updateHourControls(obj);
+  const hs=hourEnabled?Number(document.getElementById('hstart').value.slice(0,2)):0;
+  const he=hourEnabled?Number(document.getElementById('hend').value.slice(0,2)):23;
+  const site=t.site;
+  if(!site){alert(`Please select a site for Trend ${trendConfigs.findIndex(x=>x.id===t.id)+1}.`);return;}
+  const cell=cellCol(obj.headers),ne=neCol(obj.headers);
+  if(!cell){alert('Cell/identity column not detected.');return;}
+  const siteRows=obj.rows.filter(r=>!ne||clean(r[ne])===site).map(r=>({...r,__cell:clean(r[cell]),__headers:obj.headers}));
+  const ctx={name,obj,bd,ad,hs,he,site,siteRows,cell,ne,level:t.level||'CELL',scope:t.scope||['ALL'],trendSource:document.getElementById('trendSource').value};
+  renderOneTrend(t,ctx);
+}
+function renderTrendCharts(ctx){
+  window.__lastTrendContext=ctx;
+  if(!trendConfigs.length)addTrendConfig({metric:document.getElementById('metric').value,site:ctx.site,level:'CELL'});
+  // Add Trend is the only way to add more cards; re-render existing charts independently.
+  trendConfigs.forEach(t=>renderOneTrend(t,ctx));
+}
+function renderOneTrend(t,ctx){
+  const {name,obj,bd,ad,hs,he,trendSource}=ctx;
+  const metric=t.metric||document.getElementById('metric').value;
+  const targetSite=t.site||ctx.site;
   let trendName=name;
   if(document.querySelector('input[name="sourceMode"]:checked')?.value==='SSV'){
     const auto=name==='SSV OPH'?'OPH':name==='SSV BH'?'BH':'WD';
-    const chosen=trendChoice==='AUTO'?auto:trendChoice;
-    if(datasetReady(`SSV ${chosen}`)) trendName=`SSV ${chosen}`;
+    const chosen=trendSource==='AUTO'?auto:trendSource;
+    if(datasetReady(`SSV ${chosen}`))trendName=`SSV ${chosen}`;
   }
-  const trendObj=getDataset(trendName)||obj;
-  const trendHourEnabled=hasHourDimension(trendObj);
-  const trendStart=bd<ad?bd:ad, trendEnd=bd>ad?bd:ad;
-  const inTrendRange = x => x.ds>=trendStart && x.ds<=trendEnd && (!trendHourEnabled || (x.h>=hs && x.h<=he));
-  const trendFiltered=filtered.concat(
-    trendObj.rows.map(r=>{
-      const d=getRowDate(r,trendObj.headers); if(!d)return null;
-      const ds=formatDateKey(d),h=d.getHours();
-      if(ds<trendStart||ds>trendEnd||(trendHourEnabled && (h<hs||h>he)))return null;
-      if(!applyScopeFilter(r,cell,ne,level,site,level==='SITE'?'ALL':scope,siteRows,trendName))return null;
-      const raw=clean(r[metric]);
-      const v=Number(String(raw).replace(/,/g,''));
-      const hasValue=Number.isFinite(v);
-      let num=null,den=null;
-      if(usePair){
-        num=Number(String(r[pair.num]??'').replace(/,/g,''));
-        den=Number(String(r[pair.den]??'').replace(/,/g,''));
-        if(!Number.isFinite(num))num=null;if(!Number.isFinite(den))den=null;
-      }
-      if(!hasValue && !usePair)return null;
-      return {r,d,ds,h,cell:clean(r[cell]),ne:clean(ne?r[ne]:'' )||'—',band:bandFromRow(r,trendObj.headers),v:hasValue?v:null,num,den};
-    }).filter(Boolean).filter(x=>!filtered.some(y=>y.r===x.r && y.ds===x.ds && y.h===x.h))
-  );
-
-  const timeKeys=new Set(trendFiltered.map(x=>`${x.ds}T${String(x.h).padStart(2,'0')}:00`));
-  const times=[...timeKeys].sort();
-  const trendLabels=times.map(k=>{const [date,h]=k.split('T');return `${formatDateDisplay(date)} ${h}`});
-
-  // Trend Level is independent from Analysis Level. Analysis scope filters the data;
-  // Trend Level controls how the filtered data is grouped into chart lines.
-  // Example: Analysis Level = BAND, 23 only + Trend Level = CELL => one line per cell inside band 23.
-  const trendLevel=document.getElementById('trendLevel').value;
-  const entityMap=new Map();
-  const addEntity=(key,label,meta)=>{
-    if(!entityMap.has(key))entityMap.set(key,{label,...meta,points:new Map()});
-    return entityMap.get(key);
+  const dataObj=getDataset(trendName)||obj;
+  const ccol=cellCol(dataObj.headers),ncol=neCol(dataObj.headers);
+  const meta=document.getElementById(`trendMeta-${t.id}`);
+  const canvas=document.getElementById(`trendCanvas-${t.id}`);
+  if(!canvas||!ccol){if(meta)meta.textContent='Cell/identity column not detected.';return;}
+  if(!metric||!dataObj.headers.includes(metric)){if(meta)meta.textContent='Selected KPI is unavailable in this dataset.';return;}
+  const pair=metricPair(dataObj,metric),reqAgg=t.aggregation||'AUTO';
+  const aggType=reqAgg==='AUTO'?aggregationType(dataObj,metric):reqAgg;
+  const usePair=reqAgg==='AUTO'&&!!pair;
+  const hourEnabled=hasHourDimension(dataObj);
+  const rows=[];
+  dataObj.rows.forEach(r=>{
+    const d=getRowDate(r,dataObj.headers);if(!d)return;
+    const ds=formatDateKey(d),h=d.getHours();
+    if(ds< (bd<ad?bd:ad)||ds>(bd>ad?bd:ad)||(hourEnabled&&(h<hs||h>he)))return;
+    if(ncol&&clean(r[ncol])!==targetSite)return;
+    const selectedCells=Array.isArray(t.scope)&&t.scope.length?t.scope:['ALL'];
+    if(!selectedCells.includes('ALL')&&!selectedCells.includes(clean(r[ccol])))return;
+    const raw=clean(r[metric]),v=Number(String(raw).replace(/,/g,''));
+    let num=null,den=null;if(usePair){num=Number(String(r[pair.num]??'').replace(/,/g,''));den=Number(String(r[pair.den]??'').replace(/,/g,''));if(!Number.isFinite(num))num=null;if(!Number.isFinite(den))den=null;}
+    if(!Number.isFinite(v)&&!usePair)return;
+    rows.push({r,d,ds,h,cell:clean(r[ccol]),ne:clean(ncol?r[ncol]:'')||'—',band:bandFromRow(r,dataObj.headers,clean(r[ccol])),v:Number.isFinite(v)?v:null,num,den});
+  });
+  const timeKey=x=>hourEnabled?`${x.ds}T${String(x.h).padStart(2,'0')}:00`:x.ds;
+  const times=[...new Set(rows.map(timeKey))].sort();
+  const labels=times.map(k=>{if(!hourEnabled)return formatDateDisplay(k);const [date,h]=k.split('T');return `${formatDateDisplay(date)} ${h}`;});
+  const groups=new Map();
+  rows.forEach(x=>{
+    let key,label;
+    if(t.level==='SITE'){key='SITE';label=targetSite;}
+    else if(t.level==='BAND'){key=x.band||'UNKNOWN';label=key;}
+    else if(t.level==='SECTORAL'){key=sectorFromCell(x.cell,rows.map(z=>({...z.r,__cell:z.cell,__headers:dataObj.headers})),trendName);label=key;}
+    else{key=x.cell||'UNKNOWN';label=key;}
+    if(!groups.has(key))groups.set(key,{label,points:new Map()});
+    const g=groups.get(key),tk=timeKey(x);
+    if(!g.points.has(tk))g.points.set(tk,{v:[],n:0,d:0});
+    const p=g.points.get(tk);if(x.v!=null)p.v.push(x.v);if(usePair){if(x.num!=null)p.n+=x.num;if(x.den!=null)p.d+=x.den;}
+  });
+  const datasets=[...groups.values()].sort((a,b)=>a.label.localeCompare(b.label)).map((g,i)=>({label:g.label,data:times.map(k=>{const p=g.points.get(k);return p?aggregateValues(p.v,aggType,usePair?{num:p.n,den:p.d}:null):null;}),tension:t.smooth?.25:0,stepped:t.chartType==='stepped',fill:t.chartType==='area',pointRadius:t.markers?2:0,spanGaps:false}));
+  trendExportData[t.id]={
+    settings:{Trend:`Trend ${trendConfigs.findIndex(x=>x.id===t.id)+1}`,Dataset:trendName,KPI:metric,Site:targetSite,CellFilter:(Array.isArray(t.scope)?t.scope:['ALL']).join(', '),Aggregation:reqAgg,TrendLevel:t.level,ChartType:t.chartType,YAxisPosition:t.axis,BeforeDate:bd,AfterDate:ad,StartHour:hs,EndHour:he,LineStyle:t.smooth?'Smooth':'Straight',Markers:t.markers?'Show':'Hide',Timestamps:labels.length,Series:datasets.length},
+    chartRows:times.map((k,i)=>{const row={Timestamp:labels[i]};datasets.forEach(ds=>row[ds.label]=ds.data[i]??null);return row;}),
+    sourceRows:rows.map(x=>({Timestamp:timeKey(x),Date:x.ds,Hour:x.h,Site:x.ne,Cell:x.cell,Band:x.band,KPI:metric,Value:x.v,Numerator:usePair?x.num:null,Denominator:usePair?x.den:null})),
+    sourceHeaders:['Timestamp','Date','Hour','Site','Cell','Band','KPI','Value','Numerator','Denominator']
   };
-  trendFiltered.forEach(x=>{
-    let key,label,meta={};
-    if(trendLevel==='SITE'){
-      key='SITE'; label=site; meta={ne:x.ne,band:'ALL BANDS'};
-    }else if(trendLevel==='BAND'){
-      const b=x.band||'UNKNOWN';
-      key=b; label=b; meta={ne:x.ne,band:b};
-    }else if(trendLevel==='SECTORAL'){
-      const sec=sectorFromCell(x.cell,siteRows,name);
-      key=sec; label=sec; meta={ne:x.ne,band:x.band};
-    }else{
-      const c=x.cell||'UNKNOWN';
-      key=c; label=c; meta={ne:x.ne,band:x.band};
-    }
-    const e=addEntity(key,label,meta);
-    const tk=`${x.ds}T${String(x.h).padStart(2,'0')}:00`;
-    if(!e.points.has(tk))e.points.set(tk,{v:[],n:0,d:0});
-    const q=e.points.get(tk);
-    if(x.v!=null)q.v.push(x.v);
-    if(usePair){if(x.num!=null)q.n+=x.num;if(x.den!=null)q.d+=x.den;}
-  });
-
-  const trendDatasets=[];
-  [...entityMap.values()]
-    .sort((a,b)=>a.label.localeCompare(b.label))
-    .forEach(e=>{
-      const data=times.map(tk=>{
-        const q=e.points.get(tk);
-        if(!q)return null;
-        return aggregateValues(q.v,aggType,usePair?{num:q.n,den:q.d}:null);
-      });
-      trendDatasets.push({label:e.label,data,tension:.2,spanGaps:false,pointRadius:2});
-    });
-
-  const trendEntityLabel=trendLevel==='SITE'?'site total':trendLevel==='BAND'?(trendDatasets.length+' bands'):trendLevel==='SECTORAL'?(trendDatasets.length+' sectors'):(trendDatasets.length+' cells');
-  document.getElementById('trendInfo').textContent=`Trend grouping: ${trendLevel==='SITE'?'Site total':trendLevel==='BAND'?'Band':trendLevel==='SECTORAL'?'Sectoral':'Cell'} · filtered by ${level==='SITE'?'selected site':level==='BAND'?'selected band(s)':level==='CELL'?'selected cell(s)':'selected sector(s)'}`;
-  document.getElementById('trendDates').textContent=`${formatDateDisplay(trendStart)} → ${formatDateDisplay(trendEnd)} · ${times.length} timestamps · ${trendEntityLabel} · source ${trendName.replace('SSV ','')}`;
-  if(chart)chart.destroy();
-  chart=new Chart(document.getElementById('trend'),{
-    type:'line',
-    data:{labels:trendLabels,datasets:trendDatasets},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{boxWidth:24}},tooltip:{callbacks:{title:items=>items.length?items[0].label:''}}},scales:{x:{title:{display:true,text:'Date & Hour'},ticks:{autoSkip:true,maxTicksLimit:32,maxRotation:45,minRotation:45}},y:{title:{display:true,text:metric}}}}
-  });
-  document.getElementById('status').textContent=`${name}: ${rows.length.toLocaleString()} cells analyzed · Site ${site}${level!=='SITE'?` · ${level} ${scope==='ALL'?'ALL':scopeValues.join(', ')}`:''} · ${times.length} timestamps`;
+  if(meta)meta.textContent=`${targetSite} · ${metric} · ${labels.length} timestamps · ${datasets.length} series · ${formatDateDisplay(bd)} → ${formatDateDisplay(ad)}`;
+  if(trendCharts[t.id])trendCharts[t.id].destroy();
+  const type=t.chartType==='bar'?'bar':'line';
+  trendCharts[t.id]=new Chart(canvas,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}},tooltip:{callbacks:{title:items=>items.length?items[0].label:''}}},scales:{x:{title:{display:true,text:'Date & Hour'},ticks:{autoSkip:true,maxTicksLimit:20,maxRotation:45,minRotation:45}},y:{position:t.axis==='right'?'right':'left',title:{display:true,text:metric},beginAtZero:false}}}});
 }
+document.getElementById('addTrend')?.addEventListener('click',()=>addTrendConfig());
+document.getElementById('exportAllTrends')?.addEventListener('click',exportAllTrends);
+document.getElementById('trendColumns')?.addEventListener('change',()=>renderTrendCards());
 
 ['f4gk','f5gk','f4gp','f5gp1','f5gp2'].forEach(id=>document.getElementById(id).addEventListener('change',async e=>{
   const map={f4gk:'4G KPI',f5gk:'5G KPI',f4gp:'4G PLMN',f5gp1:'5G PLMN 1',f5gp2:'5G PLMN 2'};
@@ -1334,9 +1490,8 @@ function setTrendSourceInfo(){
   } else document.getElementById('trendSourceInfo').textContent='Trend source follows the selected manual dataset.';
 }
 
-document.getElementById('trendLevel').addEventListener('change',()=>{ document.getElementById('trendInfo').textContent=`Trend grouping: ${document.getElementById('trendLevel').value==='SITE'?'Site total':document.getElementById('trendLevel').value==='BAND'?'Band':document.getElementById('trendLevel').value==='SECTORAL'?'Sectoral':'Cell'}`; });
 
-document.getElementById('dataset').addEventListener('change',()=>{updateMetricBand();setTrendSourceInfo();updateHourControls(getDataset(document.getElementById('dataset').value));});
+document.getElementById('dataset').addEventListener('change',()=>{updateMetricBand();setTrendSourceInfo();updateHourControls(getDataset(document.getElementById('dataset').value));window.__lastTrendContext=null;renderTrendCards();});
 document.getElementById('trendSource').addEventListener('change',setTrendSourceInfo);
 document.getElementById('level').addEventListener('change',()=>{updateScopeSelect();});
 document.getElementById('siteSelect').addEventListener('change',()=>{updateScopeSelect();});
@@ -1344,9 +1499,12 @@ document.getElementById('scopeSelect').addEventListener('change',()=>{updateScop
 document.getElementById('siteSearch').addEventListener('input',()=>{updateScopeSelect();});
 document.getElementById('scopeSearch').addEventListener('input',()=>{updateScopeSelect();});
 document.getElementById('aggregation').addEventListener('change',()=>{const obj=getDataset(document.getElementById('dataset').value),m=document.getElementById('metric').value; if(obj&&m) document.getElementById('aggregationInfo').textContent=`Aggregation: ${document.getElementById('aggregation').value==='AUTO'?aggregationLabel(obj,m):document.getElementById('aggregation').value+' (manual override)'}`;});
+document.getElementById('wpcMetric').addEventListener('change',()=>{window.__lastTrendContext=null;});
 document.getElementById('metric').addEventListener('change',()=>{const obj=getDataset(document.getElementById('dataset').value),m=document.getElementById('metric').value; if(obj&&m) document.getElementById('aggregationInfo').textContent=`Aggregation: ${document.getElementById('aggregation').value==='AUTO'?aggregationLabel(obj,m):document.getElementById('aggregation').value+' (manual override)'}`;});
-document.getElementById('analyze').addEventListener('click',analyze);
+document.getElementById('wpcAnalyze')?.addEventListener('click',()=>analyze('wpc'));
+document.addEventListener('fullscreenchange',()=>Object.values(trendCharts).forEach(c=>c.resize()));
 renderDatasetStatus();
+addTrendConfig();
 setTrendSourceInfo();
 updateHourControls(getDataset(document.getElementById('dataset').value));
 window.addEventListener('error', e=>{
