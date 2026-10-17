@@ -920,6 +920,7 @@ function updateMetricBand(){
   if(prevMetric && ms.includes(prevMetric)) sel.value=prevMetric;
   if(wpcSel){
     wpcSel.innerHTML=options;
+    wpcSel.__searchOptionSource=null;
     if(prevWpcMetric && ms.includes(prevWpcMetric)) wpcSel.value=prevWpcMetric;
     else if(ms.length) wpcSel.value=ms.includes(prevMetric)?prevMetric:ms[0];
   }
@@ -1217,8 +1218,33 @@ function removeTrendConfig(id){delete trendExportData[id];
 }
 function applyOptionSearch(input,select){
   if(!input||!select)return;
+  // Native <option hidden> is inconsistently rendered across browsers. Keep a source
+  // copy and rebuild the list so matching KPI/Site/Cell options are always visible.
+  if(!select.__searchOptionSource){
+    select.__searchOptionSource=[...select.options].map(o=>({value:o.value,text:o.textContent,html:o.outerHTML}));
+  }
   const q=clean(input.value).toLocaleLowerCase();
-  [...select.options].forEach(o=>{o.hidden=!!q&&!clean(o.textContent).toLocaleLowerCase().includes(q);});
+  const selected=[...select.selectedOptions].map(o=>o.value);
+  const source=select.__searchOptionSource;
+  const matches=source.filter(o=>!q||clean(o.text).toLocaleLowerCase().includes(q));
+  select.innerHTML=matches.map(o=>o.html).join('');
+  if(select.multiple){
+    [...select.options].forEach(o=>o.selected=selected.includes(o.value));
+    // Do not auto-select a Cell: search should reveal candidates, selection stays explicit.
+  }else{
+    let target=selected.find(v=>matches.some(o=>o.value===v));
+    if(q){
+      const exact=matches.find(o=>clean(o.text).toLocaleLowerCase()===q||clean(o.value).toLocaleLowerCase()===q);
+      const realMatches=matches.filter(o=>o.value && o.value!=='ALL');
+      if(exact)target=exact.value;
+      else if(realMatches.length===1)target=realMatches[0].value;
+    }
+    if(target!==undefined)select.value=target;
+    if(q && select.value!==target && matches.length)select.selectedIndex=0;
+    if(target!==undefined && select.value===target && selected[0]!==target){
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  }
 }
 function bindTrendOptionSearches(grid){
   grid.querySelectorAll('input[data-search-for]').forEach(input=>{
